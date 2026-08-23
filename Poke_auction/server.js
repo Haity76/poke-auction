@@ -14,18 +14,18 @@ let gameState = 'LOBBY';
 let currentPokemon = null;
 let currentBid = { playerId: null, amount: 0 };
 let auctionTimer = null;
+let timeLeft = 15;
+
+// Variables pour le combat tour par tour
+let battleState = {
+  attackerId: null,
+  defenderId: null,
+  turn: 1
+};
 
 const colorTranslations = {
-  black: 'Noir',
-  blue: 'Bleu',
-  brown: 'Brun / Marron',
-  gray: 'Gris',
-  green: 'Vert',
-  pink: 'Rose',
-  purple: 'Violet',
-  red: 'Rouge',
-  white: 'Blanc',
-  yellow: 'Jaune'
+  black: 'Noir', blue: 'Bleu', brown: 'Brun / Marron', gray: 'Gris',
+  green: 'Vert', pink: 'Rose', purple: 'Violet', red: 'Rouge', white: 'Blanc', yellow: 'Jaune'
 };
 
 async function getRandomPokemon() {
@@ -41,6 +41,7 @@ async function getRandomPokemon() {
       id,
       name: nameFr,
       color: colorTranslations[colorRaw] || colorRaw,
+      sprite: pokeRes.data.sprites.front_default,
       stats: {
         hp: pokeRes.data.stats[0].base_stat,
         maxHp: pokeRes.data.stats[0].base_stat,
@@ -52,33 +53,63 @@ async function getRandomPokemon() {
       }
     };
   } catch (err) {
-    console.error('Erreur PokéAPI:', err.message);
     return null;
   }
 }
 
+function getSanitizedPlayers() {
+  const result = {};
+  for (let id in players) {
+    result[id] = {
+      id: players[id].id,
+      name: players[id].name,
+      budget: players[id].budget,
+      team: players[id].team
+    };
+  }
+  return result;
+}
+
 io.on('connection', (socket) => {
-  if (Object.keys(players).length < 2) {
-    players[socket.id] = { id: socket.id, budget: 1000, team: [], currentChoice: null };
-    socket.emit('roleAssignment', { role: 'player', id: socket.id });
+  const playerIds = Object.keys(players);
+  if (playerIds.length < 2) {
+    const pName = playerIds.length === 0 ? 'Joueur 1' : 'Joueur 2';
+    players[socket.id] = {
+      id: socket.id,
+      name: pName,
+      budget: 900,
+      team: [],
+      currentChoice: null,
+      activePokemonIndex: 0
+    };
+    socket.emit('roleAssignment', { role: 'player', id: socket.id, name: pName });
   } else {
     socket.emit('roleAssignment', { role: 'spectator', id: socket.id });
   }
+
+  io.emit('updateGameState', { gameState, players: getSanitizedPlayers() });
 
   if (Object.keys(players).length === 2 && gameState === 'LOBBY') {
     startAuctionRound();
   }
 
-  socket.on('placeBid', (amount) => {
+  socket.on('placeBid', () => {
     const player = players[socket.id];
-    if (player && gameState === 'AUCTION' && amount > currentBid.amount && amount <= player.budget) {
-      currentBid = { playerId: socket.id, amount };
-      io.emit('bidUpdated', currentBid);
+    if (!player || gameState !== 'AUCTION') return;
+    
+    // Un joueur avec 3 Pokémon ne participe plus
+    if (player.team.length >= 3) return;
+
+    const newAmount = currentBid.amount + 50;
+    if (newAmount <= player.budget) {
+      currentBid = { playerId: socket.id, amount: newAmount, playerName: player.name };
+      timeLeft = 15; // Reset du timer à chaque mise
+      io.emit('bidUpdated', { currentBid, timeLeft });
     }
   });
 
-  socket.on('submitAction', (choice) => {
-    if (players[socket.id]) {
+  socket.on('submitBattleAction', (choice) => {
+    if (players[socket.id] && gameState === 'BATTLE') {
       players[socket.id].currentChoice = choice;
       checkBattleTurn();
     }
@@ -88,21 +119,46 @@ io.on('connection', (socket) => {
     if (players[socket.id]) {
       delete players[socket.id];
       gameState = 'LOBBY';
+      clearInterval(auctionTimer);
       io.emit('playerDisconnected');
+      io.emit('updateGameState', { gameState, players: getSanitizedPlayers() });
     }
   });
 });
 
 async function startAuctionRound() {
+  const pKeys = Object.keys(players);
+  if (pKeys.length < 2) return;
+
+  const p1 = players[pKeys[0]];
+  const p2 = players[pKeys[1]];
+
+  // Si les deux ont 3 Pokémon -> Début du combat
+  if (p1.team.length >= 3 && p2.team.length >= 3) {
+    return startBattle();
+  }
+
+  // Si l'un des joueurs a déjà 3 Pokémon, l’enchère s'arrête et l'autre prend automatiquement les restants
+  if (p1.team.length >= 3 || p2.team.length >= 3) {
+    const needyPlayer = p1.team.length < 3 ? p1 : p2;
+    const poke = await getRandomPokemon();
+    if (poke) {
+      needyPlayer.team.push(poke);
+      io.emit('autoAssigned', { playerName: needyPlayer.name, pokeName: poke.name });
+      io.emit('updateGameState', { gameState: 'AUCTION', players: getSanitizedPlayers() });
+    }
+    return setTimeout(startAuctionRound, 2000);
+  }
+
   gameState = 'AUCTION';
-  currentBid = { playerId: null, amount: 0 };
+  currentBid = { playerId: null, amount: 0, playerName: 'Personne' };
   currentPokemon = await getRandomPokemon();
 
   if (!currentPokemon) return startAuctionRound();
 
-  io.emit('newAuction', { color: currentPokemon.color });
+  timeLeft = 15;
+  io.emit('newAuction', { color: currentPokemon.color, players: getSanitizedPlayers() });
 
-  let timeLeft = 10;
   clearInterval(auctionTimer);
   auctionTimer = setInterval(() => {
     io.emit('timerTick', timeLeft);
@@ -119,64 +175,91 @@ function resolveAuction() {
     const winner = players[currentBid.playerId];
     winner.budget -= currentBid.amount;
     winner.team.push(currentPokemon);
-    io.emit('auctionEnded', { winnerId: currentBid.playerId, price: currentBid.amount });
+    io.emit('auctionEnded', { winnerName: winner.name, price: currentBid.amount, pokeName: currentPokemon.name });
   } else {
-    io.emit('auctionEnded', { winnerId: null });
+    io.emit('auctionEnded', { winnerName: null });
   }
 
-  const pKeys = Object.keys(players);
-  if (pKeys.length === 2 && players[pKeys[0]].team.length >= 1 && players[pKeys[1]].team.length >= 1) {
-    startBattle();
-  } else {
-    setTimeout(startAuctionRound, 3000);
-  }
+  io.emit('updateGameState', { gameState, players: getSanitizedPlayers() });
+  setTimeout(startAuctionRound, 3000);
 }
 
 function startBattle() {
   gameState = 'BATTLE';
   const pKeys = Object.keys(players);
-  io.emit('startBattle', {
-    p1Name: players[pKeys[0]].team[0].name,
-    p2Name: players[pKeys[1]].team[0].name
-  });
+  
+  // Pile ou face pour le premier attaquant
+  const firstAttackerIndex = Math.random() < 0.5 ? 0 : 1;
+  battleState.attackerId = pKeys[firstAttackerIndex];
+  battleState.defenderId = pKeys[firstAttackerIndex === 0 ? 1 : 0];
+  battleState.turn = 1;
+
+  broadcastBattleState("Le combat commence ! Pile ou face : " + players[battleState.attackerId].name + " attaque en premier !");
 }
 
-function checkBattleTurn() {
+function broadcastBattleState(logMessage) {
   const pKeys = Object.keys(players);
   const p1 = players[pKeys[0]];
   const p2 = players[pKeys[1]];
 
-  if (p1.currentChoice && p2.currentChoice) {
-    const poke1 = p1.team[0];
-    const poke2 = p2.team[0];
+  const activePoke1 = p1.team[p1.activePokemonIndex];
+  const activePoke2 = p2.team[p2.activePokemonIndex];
 
-    let attacker = poke1.stats.speed >= poke2.stats.speed 
-      ? { player: p1, poke: poke1, defender: p2, defPoke: poke2 } 
-      : { player: p2, poke: poke2, defender: p1, defPoke: poke1 };
+  io.emit('battleUpdate', {
+    p1: { name: p1.name, poke: activePoke1, teamLeft: p1.team.filter(p => p.stats.hp > 0).length },
+    p2: { name: p2.name, poke: activePoke2, teamLeft: p2.team.filter(p => p.stats.hp > 0).length },
+    attackerId: battleState.attackerId,
+    defenderId: battleState.defenderId,
+    log: logMessage
+  });
+}
 
-    const atkStat = attacker.player.currentChoice.stat === 'physique' ? attacker.poke.stats.atk : attacker.poke.stats.atk_spe;
-    const defStat = attacker.defender.currentChoice.stat === 'physique' ? attacker.defPoke.stats.def : attacker.defPoke.stats.def_spe;
+function checkBattleTurn() {
+  const attacker = players[battleState.attackerId];
+  const defender = players[battleState.defenderId];
 
-    let damage = atkStat - defStat;
-    if (damage <= 0) damage = 5;
+  if (attacker.currentChoice && defender.currentChoice) {
+    const atkPoke = attacker.team[attacker.activePokemonIndex];
+    const defPoke = defender.team[defender.activePokemonIndex];
 
-    attacker.defPoke.stats.hp -= damage;
+    const isPhysicalAtk = attacker.currentChoice === 'physique';
+    const isPhysicalDef = defender.currentChoice === 'physique';
 
-    io.emit('turnResult', {
-      attackerPoke: attacker.poke.name,
-      defenderPoke: attacker.defPoke.name,
-      damage,
-      p1Hp: Math.max(0, p1.team[0].stats.hp),
-      p2Hp: Math.max(0, p2.team[0].stats.hp)
-    });
+    const atkStat = isPhysicalAtk ? atkPoke.stats.atk : atkPoke.stats.atk_spe;
+    const defStat = isPhysicalDef ? defPoke.stats.def : defPoke.stats.def_spe;
 
-    p1.currentChoice = null;
-    p2.currentChoice = null;
+    let damage = Math.max(10, atkStat - Math.floor(defStat / 2));
+    defPoke.stats.hp = Math.max(0, defPoke.stats.hp - damage);
+
+    let log = `${attacker.name} (${atkPoke.name}) lance une attaque ${attacker.currentChoice} ! ${damage} dégâts infligés.`;
+
+    // Si le Pokémon adverse est K.O.
+    if (defPoke.stats.hp <= 0) {
+      log += ` ${defender.name} : ${defPoke.name} est K.O. !`;
+      defender.activePokemonIndex++;
+
+      // Vérifier si défaite totale
+      if (defender.activePokemonIndex >= defender.team.length) {
+        log += ` 🎉 ${attacker.name} a remporté la victoire finale !`;
+        gameState = 'GAME_OVER';
+        io.emit('gameOver', { winnerName: attacker.name });
+        return broadcastBattleState(log);
+      }
+    }
+
+    // Inversion des rôles pour le prochain tour
+    const temp = battleState.attackerId;
+    battleState.attackerId = battleState.defenderId;
+    battleState.defenderId = temp;
+
+    attacker.currentChoice = null;
+    defender.currentChoice = null;
+
+    broadcastBattleState(log);
   }
 }
 
-// Configuration dynamique du port pour hébergement (Render, Heroku, etc.)
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Serveur démarré sur le port ${PORT}`);
+  console.log(`Serveur prêt sur le port ${PORT}`);
 });

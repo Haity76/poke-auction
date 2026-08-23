@@ -1,7 +1,7 @@
 {
   "name": "poke-auction",
-  "version": "1.0.0",
-  "description": "Jeu d'enchères et combat Pokémon en direct",
+  "version": "2.0.0",
+  "description": "Jeu d'enchères et combat Pokémon V2",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

@@ -2,49 +2,274 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Pokémon Enchères & Combat</title>
+  <title>PokéAuction V2 - Zekrom vs Reshiram</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; }
-    .box { border: 2px solid #444; padding: 20px; margin: 20px auto; max-width: 500px; background: #2a2a2a; border-radius: 10px; }
-    .color-display { font-size: 2em; font-weight: bold; color: #ffd700; margin: 15px 0; text-transform: uppercase; }
-    button { padding: 10px 20px; margin: 8px; font-size: 1em; cursor: pointer; border: none; border-radius: 5px; background-color: #008cba; color: white; }
-    button:hover { background-color: #005f73; }
-    input { padding: 10px; font-size: 1em; width: 150px; border-radius: 5px; border: 1px solid #ccc; }
-    .hidden { display: none; }
-    .role-badge { background: #555; padding: 5px 10px; border-radius: 15px; font-size: 0.9em; display: inline-block; margin-bottom: 10px; }
+    :root {
+      --bg: #0b0f19;
+      --panel: #151d30;
+      --accent: #00d2ff;
+      --text: #ffffff;
+      --subtext: #94a3b8;
+      --border: #1e293b;
+      --btn-bg: #00d2ff;
+      --btn-text: #000000;
+    }
+
+    body.reshiram-theme {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --accent: #ff4500;
+      --text: #0f172a;
+      --subtext: #64748b;
+      --border: #e2e8f0;
+      --btn-bg: #ff4500;
+      --btn-text: #ffffff;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      transition: background-color 0.4s, color 0.4s;
+    }
+
+    header {
+      padding: 15px;
+      text-align: center;
+      background: var(--panel);
+      border-bottom: 2px solid var(--accent);
+    }
+    h1 { margin: 0; font-size: 1.8em; color: var(--accent); }
+
+    .main-layout {
+      display: flex;
+      flex: 1;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    /* Panneaux latéraux Équipes */
+    .team-panel {
+      width: 260px;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      border-left: 1px solid var(--border);
+      padding: 15px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .team-title { font-weight: bold; border-bottom: 1px solid var(--accent); padding-bottom: 5px; color: var(--accent); }
+    .poke-slot {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg);
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .poke-slot img { width: 50px; height: 50px; }
+
+    /* Zone Centrale */
+    .center-content {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 25px;
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    .color-box {
+      font-size: 2em;
+      font-weight: 900;
+      color: var(--accent);
+      background: var(--bg);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      text-transform: uppercase;
+      border: 1px dashed var(--accent);
+    }
+
+    .timer-circle {
+      font-size: 3em;
+      font-weight: bold;
+      color: #ef4444;
+    }
+
+    /* Style Bouton Miser */
+    .btn-bid {
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      font-size: 1.2em;
+      font-weight: bold;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 0 15px var(--accent);
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+    .btn-bid:active { transform: scale(0.95); }
+
+    /* Scene Arena Jeu Vidéo */
+    .arena {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .fighter-card {
+      flex: 1;
+      background: var(--bg);
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .hp-bar-bg {
+      background: #334155;
+      height: 16px;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 5px;
+    }
+    .hp-bar-fill {
+      height: 100%;
+      width: 100%;
+      background: #22c55e;
+      transition: width 0.4s ease;
+    }
+
+    .battle-log {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 8px;
+      color: var(--accent);
+      min-height: 50px;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+
+    footer {
+      padding: 10px;
+      text-align: center;
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+    }
+
+    .theme-toggle {
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
-  <h1>Enchères & Combat Pokémon</h1>
-  <div id="roleBadge" class="role-badge">Connexion...</div>
-  <div id="status">En attente des joueurs...</div>
+  <header>
+    <h1>PokéAuction V2</h1>
+    <div id="roleBadge" style="margin-top: 5px; font-weight: bold; color: var(--subtext);">Connexion...</div>
+  </header>
 
-  <!-- PHASE ENCHÈRE -->
-  <div id="auctionZone" class="box hidden">
-    <h2>Vente aux Enchères</h2>
-    <p>Indice de couleur du Pokémon :</p>
-    <div id="pokeColor" class="color-display">???</div>
-    <p>Temps restant : <span id="timer" style="font-weight: bold; color: #ff4d4d;">10</span>s</p>
-    <p>Meilleure offre actuelle : <span id="highestBid">0</span> pièces</p>
-    
-    <div id="playerAuctionControls">
-      <input type="number" id="bidInput" placeholder="Votre offre">
-      <button onclick="sendBid()">Miser</button>
+  <div class="main-layout">
+    <!-- Équipe Joueur 1 (Gauche) -->
+    <div class="team-panel">
+      <div class="team-title">Équipe Joueur 1</div>
+      <div id="j1Budget">Solde: 900 🪙</div>
+      <div id="j1Team"></div>
+    </div>
+
+    <!-- Zone de jeu Centrale -->
+    <div class="center-content">
+      <div id="status" style="margin-bottom: 15px; color: var(--subtext);">En attente des joueurs...</div>
+
+      <!-- Phase Enchère -->
+      <div id="auctionZone" class="card hidden">
+        <h2 style="margin:0;">Enchère Mystère</h2>
+        <p style="color: var(--subtext);">Couleur de la forme Shiny :</p>
+        <div id="pokeColor" class="color-box">???</div>
+        
+        <div class="timer-circle" id="timer">15</div>
+        <p>Plus haute mise : <strong id="highestBid" style="color: var(--accent);">0</strong> 🪙 (<span id="highestBidder">Personne</span>)</p>
+
+        <div id="bidControls" style="margin-top: 20px;">
+          <button class="btn-bid" onclick="placeBid()">Miser +50 🪙</button>
+        </div>
+      </div>
+
+      <!-- Phase Combat -->
+      <div id="battleZone" class="card hidden" style="max-width: 650px;">
+        <h2>Combat Pokémon</h2>
+
+        <div class="arena">
+          <!-- Joueur 1 -->
+          <div class="fighter-card">
+            <strong id="p1FighterName">J1</strong>
+            <img id="p1Sprite" src="" style="display:block; margin: auto; height: 80px;">
+            <div id="p1HpText">100/100 PV</div>
+            <div class="hp-bar-bg"><div id="p1HpBar" class="hp-bar-fill"></div></div>
+          </div>
+
+          <div style="font-weight: bold; font-size: 1.5em; color: var(--accent);">VS</div>
+
+          <!-- Joueur 2 -->
+          <div class="fighter-card">
+            <strong id="p2FighterName">J2</strong>
+            <img id="p2Sprite" src="" style="display:block; margin: auto; height: 80px;">
+            <div id="p2HpText">100/100 PV</div>
+            <div class="hp-bar-bg"><div id="p2HpBar" class="hp-bar-fill"></div></div>
+          </div>
+        </div>
+
+        <div id="battleLog" class="battle-log">Préparation du combat...</div>
+
+        <div id="battleActionControls">
+          <p id="actionInstruction" style="margin-bottom: 10px;">Choisissez votre coup :</p>
+          <button class="btn-bid" style="font-size: 1em; padding: 10px 20px;" onclick="sendAction('physique')">Physique</button>
+          <button class="btn-bid" style="font-size: 1em; padding: 10px 20px; background: #a855f7; color: #fff;" onclick="sendAction('special')">Spécial</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Équipe Joueur 2 (Droite) -->
+    <div class="team-panel">
+      <div class="team-title">Équipe Joueur 2</div>
+      <div id="j2Budget">Solde: 900 🪙</div>
+      <div id="j2Team"></div>
     </div>
   </div>
 
-  <!-- PHASE COMBAT -->
-  <div id="battleZone" class="box hidden">
-    <h2>Phase de Combat</h2>
-    <div id="battleLog" style="margin-bottom: 20px; font-size: 1.1em; color: #00e676;"></div>
-    
-    <div id="playerBattleControls">
-      <h3>Choisissez votre action :</h3>
-      <button onclick="sendAction('physique')">Physique (Atk / Def)</button>
-      <button onclick="sendAction('special')">Spécial (Atk Spé / Def Spé)</button>
-    </div>
-  </div>
+  <footer>
+    <button class="theme-toggle" onclick="toggleTheme()">Changer de Thème (Zekrom / Reshiram)</button>
+  </footer>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -55,26 +280,25 @@
     socket.on('roleAssignment', (data) => {
       myRole = data.role;
       myId = data.id;
-
-      const badge = document.getElementById('roleBadge');
-      if (myRole === 'player') {
-        badge.innerText = "Mode : JOUEUR";
-        badge.style.background = "#2e7d32";
-      } else {
-        badge.innerText = "Mode : SPECTATEUR";
-        badge.style.background = "#1565c0";
-        document.getElementById('playerAuctionControls').classList.add('hidden');
-        document.getElementById('playerBattleControls').classList.add('hidden');
+      document.getElementById('roleBadge').innerText = myRole === 'player' ? `Rôle : ${data.name}` : "Rôle : Spectateur";
+      if (myRole !== 'player') {
+        document.getElementById('bidControls').classList.add('hidden');
+        document.getElementById('battleActionControls').classList.add('hidden');
       }
     });
 
+    socket.on('updateGameState', (data) => {
+      renderTeams(data.players);
+    });
+
     socket.on('newAuction', (data) => {
-      document.getElementById('status').innerText = "Une enchère commence !";
+      document.getElementById('status').innerText = "Une nouvelle enchère a commencé !";
       document.getElementById('auctionZone').classList.remove('hidden');
       document.getElementById('battleZone').classList.add('hidden');
       document.getElementById('pokeColor').innerText = data.color;
       document.getElementById('highestBid').innerText = "0";
-      document.getElementById('bidInput').value = "";
+      document.getElementById('highestBidder').innerText = "Personne";
+      renderTeams(data.players);
     });
 
     socket.on('timerTick', (time) => {
@@ -82,43 +306,94 @@
     });
 
     socket.on('bidUpdated', (data) => {
-      document.getElementById('highestBid').innerText = data.amount;
+      document.getElementById('highestBid').innerText = data.currentBid.amount;
+      document.getElementById('highestBidder').innerText = data.currentBid.playerName;
+      document.getElementById('timer').innerText = data.timeLeft;
     });
 
     socket.on('auctionEnded', (data) => {
-      if (data.winnerId) {
-        const isMe = data.winnerId === myId;
-        const msg = myRole === 'player'
-          ? (isMe ? 'VOUS avez remporté' : 'L\'adversaire a remporté')
-          : 'Le joueur a remporté';
-        
-        document.getElementById('status').innerText = `Enchère terminée ! ${msg} le Pokémon mystère pour ${data.price} pièces.`;
+      if (data.winnerName) {
+        document.getElementById('status').innerText = `${data.winnerName} remporte ${data.pokeName} pour ${data.price} 🪙 !`;
       } else {
-        document.getElementById('status').innerText = "Personne n'a misé !";
+        document.getElementById('status').innerText = "Personne n'a misé.";
       }
     });
 
-    socket.on('startBattle', (data) => {
+    socket.on('autoAssigned', (data) => {
+      document.getElementById('status').innerText = `${data.playerName} ayant une équipe incomplète, il reçoit automatiquement ${data.pokeName} !`;
+    });
+
+    socket.on('battleUpdate', (data) => {
       document.getElementById('auctionZone').classList.add('hidden');
       document.getElementById('battleZone').classList.remove('hidden');
-      document.getElementById('battleLog').innerText = `Combat : ${data.p1Name} VS ${data.p2Name} !`;
+
+      // Maj Joueur 1
+      if (data.p1.poke) {
+        document.getElementById('p1FighterName').innerText = `${data.p1.name} (${data.p1.poke.name})`;
+        document.getElementById('p1Sprite').src = data.p1.poke.sprite;
+        updateHp('p1', data.p1.poke.stats.hp, data.p1.poke.stats.maxHp);
+      }
+
+      // Maj Joueur 2
+      if (data.p2.poke) {
+        document.getElementById('p2FighterName').innerText = `${data.p2.name} (${data.p2.poke.name})`;
+        document.getElementById('p2Sprite').src = data.p2.poke.sprite;
+        updateHp('p2', data.p2.poke.stats.hp, data.p2.poke.stats.maxHp);
+      }
+
+      document.getElementById('battleLog').innerText = data.log;
+
+      if (myRole === 'player') {
+        const isAttacker = myId === data.attackerId;
+        document.getElementById('actionInstruction').innerText = isAttacker ? "C'est à votre tour d'ATTAQUER !" : "C'est à votre tour de DEFENDRE !";
+      }
     });
 
-    socket.on('turnResult', (data) => {
-      document.getElementById('battleLog').innerText = 
-        `${data.attackerPoke} est plus rapide et attaque ! Dégâts infligés au ${data.defenderPoke} : ${data.damage} PV.`;
-    });
+    function updateHp(prefix, current, max) {
+      const pct = Math.max(0, (current / max) * 100);
+      const bar = document.getElementById(`${prefix}HpBar`);
+      bar.style.width = `${pct}%`;
+      document.getElementById(`${prefix}HpText`).innerText = `${current}/${max} PV`;
 
-    function sendBid() {
-      if (myRole !== 'player') return;
-      const amount = parseInt(document.getElementById('bidInput').value);
-      if (amount && amount > 0) socket.emit('placeBid', amount);
+      if (pct < 25) bar.style.background = '#ef4444';
+      else if (pct < 50) bar.style.background = '#facc15';
+      else bar.style.background = '#22c55e';
     }
 
-    function sendAction(statType) {
-      if (myRole !== 'player') return;
-      socket.emit('submitAction', { stat: statType });
-      document.getElementById('battleLog').innerText = "Choix enregistré ! En attente de l'adversaire...";
+    function renderTeams(players) {
+      const pKeys = Object.keys(players);
+      if (pKeys.length >= 1) {
+        const j1 = players[pKeys[0]];
+        document.getElementById('j1Budget').innerText = `Solde: ${j1.budget} 🪙`;
+        document.getElementById('j1Team').innerHTML = j1.team.map(p => `
+          <div class="poke-slot">
+            <img src="${p.sprite}" />
+            <div><strong>${p.name}</strong></div>
+          </div>
+        `).join('');
+      }
+      if (pKeys.length >= 2) {
+        const j2 = players[pKeys[1]];
+        document.getElementById('j2Budget').innerText = `Solde: ${j2.budget} 🪙`;
+        document.getElementById('j2Team').innerHTML = j2.team.map(p => `
+          <div class="poke-slot">
+            <img src="${p.sprite}" />
+            <div><strong>${p.name}</strong></div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function placeBid() {
+      if (myRole === 'player') socket.emit('placeBid');
+    }
+
+    function sendAction(type) {
+      if (myRole === 'player') socket.emit('submitBattleAction', type);
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('reshiram-theme');
     }
   </script>
 </body>
