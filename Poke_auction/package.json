@@ -1,12 +1,13 @@
 {
   "name": "poke-auction-v6",
-  "version": "5.0.0",
-  "description": "Jeu d'enchères et de combats Pokémon multijoueur par salons",
+  "version": "6.0.0",
+  "description": "Jeu d'enchères et de combats Pokémon V6",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
+    "axios": "^1.6.7",
     "express": "^4.19.2",
     "socket.io": "^4.7.5"
   }
