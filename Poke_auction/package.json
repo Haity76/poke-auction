@@ -1,5 +1,5 @@
 {
-  "name": "poke-auction-v5",
+  "name": "poke-auction-v6",
   "version": "5.0.0",
   "description": "Jeu d'enchères et de combats Pokémon multijoueur par salons",
   "main": "server.js",

@@ -2,15 +2,18 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>PokéAuction V5 - Salons & Combat 2.5D</title>
+  <title>PokéAuction V6 - Combat Dynamique & Thèmes</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     body.theme-zekrom { --bg: #0b0f19; --panel: #151d30; --accent: #00d2ff; --text: #ffffff; --border: #1e293b; --btn-bg: #00d2ff; --btn-text: #000; }
     body.theme-reshiram { --bg: #f8fafc; --panel: #ffffff; --accent: #ff4500; --text: #0f172a; --border: #e2e8f0; --btn-bg: #ff4500; --btn-text: #fff; }
     body.theme-lunala { --bg: #0b0813; --panel: #171026; --accent: #9d4edd; --text: #f3e8ff; --border: #2e1a47; --btn-bg: #9d4edd; --btn-text: #fff; }
     body.theme-heatran { --bg: #140804; --panel: #241008; --accent: #d97706; --text: #fef3c7; --border: #451a03; --btn-bg: #d97706; --btn-text: #fff; }
+    body.theme-tenefix { --bg: #120b1d; --panel: #1e132f; --accent: #10b981; --text: #f3e8ff; --border: #3b2161; --btn-bg: #8b5cf6; --btn-text: #fff; }
+    body.theme-eternatos { --bg: #110414; --panel: #210728; --accent: #f43f5e; --text: #ffe4e6; --border: #4c0519; --btn-bg: #f43f5e; --btn-text: #fff; }
+    body.theme-brutalibre { --bg: #130a06; --panel: #26130b; --accent: #eab308; --text: #fefce8; --border: #451a03; --btn-bg: #eab308; --btn-text: #000; }
 
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; transition: all 0.3s ease; }
     header { padding: 12px; text-align: center; background: var(--panel); border-bottom: 2px solid var(--accent); }
     h1 { margin: 0; font-size: 1.5em; color: var(--accent); }
 
@@ -29,26 +32,33 @@
     .btn { background: var(--btn-bg); color: var(--btn-text); font-weight: bold; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-size: 0.95em; margin: 4px; }
     input { padding: 8px; border-radius: 6px; border: 1px solid var(--border); text-align: center; }
 
-    /* COMBAT 2.5D */
+    /* SCÈNE DE COMBAT DYNAMIQUE 2.5D */
     .battle-scene { position: relative; width: 100%; height: 260px; background: linear-gradient(180deg, #334155 0%, #0f172a 100%); border-radius: 12px; border: 2px solid var(--border); overflow: hidden; margin-bottom: 15px; }
-    .platform-enemy { position: absolute; top: 50px; right: 40px; width: 140px; height: 40px; background: rgba(255,255,255,0.15); border-radius: 50%; transform: scaleY(0.5); }
-    .sprite-enemy { position: absolute; top: 10px; right: 65px; height: 90px; z-index: 2; }
-    .platform-self { position: absolute; bottom: 20px; left: 40px; width: 180px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 50%; transform: scaleY(0.5); }
-    .sprite-self { position: absolute; bottom: 25px; left: 70px; height: 120px; z-index: 2; }
 
-    .hud-enemy { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 8px; width: 180px; text-align: left; }
-    .hud-self { position: absolute; bottom: 15px; right: 15px; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 8px; width: 180px; text-align: left; }
+    /* POSITIONS : Premier Plan (Attaquant) / Second Plan (Défenseur) */
+    .slot-foreground { position: absolute; bottom: 20px; left: 40px; width: 180px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 50%; transform: scaleY(0.5); transition: all 0.5s ease; }
+    .sprite-foreground { position: absolute; bottom: 25px; left: 70px; height: 120px; z-index: 3; transition: all 0.5s ease; }
+    .hud-foreground { position: absolute; bottom: 15px; right: 15px; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 8px; width: 180px; text-align: left; transition: all 0.5s ease; }
+
+    .slot-background { position: absolute; top: 50px; right: 40px; width: 140px; height: 40px; background: rgba(255,255,255,0.15); border-radius: 50%; transform: scaleY(0.5); transition: all 0.5s ease; }
+    .sprite-background { position: absolute; top: 10px; right: 65px; height: 90px; z-index: 2; transition: all 0.5s ease; }
+    .hud-background { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 8px; width: 180px; text-align: left; transition: all 0.5s ease; }
+
     .hp-bar-bg { background: #334155; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 4px; }
     .hp-bar-fill { height: 100%; width: 100%; background: #22c55e; transition: width 0.4s ease; }
 
     .battle-log { background: var(--bg); border: 1px solid var(--border); padding: 10px; border-radius: 8px; color: var(--accent); font-weight: bold; margin-bottom: 10px; }
+
+    footer { padding: 8px; text-align: center; background: var(--panel); border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 6px; }
+    .theme-btn { border: none; padding: 5px 10px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 0.8em; }
+
     .hidden { display: none !important; }
   </style>
 </head>
 <body class="theme-zekrom">
 
   <header>
-    <h1>PokéAuction V5</h1>
+    <h1>PokéAuction V6</h1>
     <div id="roomBadge" style="font-size: 0.85em; opacity: 0.8;">Hors ligne</div>
   </header>
 
@@ -68,7 +78,7 @@
     <!-- ZONE CENTRALE -->
     <div class="center-content">
       
-      <!-- LOBBY : Créer / Rejoindre -->
+      <!-- LOBBY -->
       <div id="lobbyZone" class="card">
         <h2>Bienvenue sur PokéAuction</h2>
         <input type="text" id="usernameInput" placeholder="Entrez votre Pseudo" value="Dresseur">
@@ -82,24 +92,24 @@
         </div>
       </div>
 
-      <!-- ATTENTE ADVERSAIRE -->
+      <!-- EN ATTENTE -->
       <div id="waitingZone" class="card hidden">
         <h2>Salon : <span id="displayRoomCode" style="color: var(--accent);"></span></h2>
         <p>Partagez ce code avec votre adversaire pour démarrer !</p>
         <p style="opacity: 0.7;">En attente d'un second joueur...</p>
       </div>
 
-      <!-- VOTE RÈGLES -->
+      <!-- VOTE -->
       <div id="voteZone" class="card hidden">
         <h2>Vote du Mode d'Enchère</h2>
         <p>Sélectionnez le type d'indice pour la partie :</p>
         <button class="btn" onclick="vote('shiny')">Couleurs Shiny</button>
-        <button class="btn" onclick="vote('pokedex')">N° Pokédex</button>
+        <button class="btn" onclick="vote('pokedex')">N° Pokédex (Avec sous-évolutions)</button>
         <button class="btn" onclick="vote('masque')">Masqué (Sans Indice)</button>
         <p id="voteStatus" style="margin-top: 15px; color: var(--accent); font-weight: bold;"></p>
       </div>
 
-      <!-- ENCHÈRES -->
+      <!-- ENCHÈRE -->
       <div id="auctionZone" class="card hidden">
         <h2>Enchère en cours</h2>
         <p id="pokeHint" style="font-size: 1.5em; font-weight: 900; background: var(--bg); padding: 10px; border-radius: 8px; margin: 10px 0;">???</p>
@@ -108,33 +118,45 @@
         <button class="btn" onclick="placeBid()">Miser +50 🪙</button>
       </div>
 
-      <!-- COMBAT PERSPECTIVE 2.5D -->
+      <!-- COMBAT PERMUTATION DYNAMIQUE -->
       <div id="battleZone" class="card hidden">
         <div class="battle-scene">
-          <!-- Adversaire (Haut-Droit, Face) -->
-          <div class="hud-enemy">
-            <strong id="enemyPokeName">Adversaire</strong>
-            <div id="enemyHpText" style="font-size: 0.75em;">100/100 PV</div>
-            <div class="hp-bar-bg"><div id="enemyHpBar" class="hp-bar-fill"></div></div>
+          <!-- Second Plan (Défenseur) -->
+          <div class="hud-background">
+            <strong id="bgPokeName">Défenseur</strong>
+            <div id="bgHpText" style="font-size: 0.75em;">100/100 PV</div>
+            <div class="hp-bar-bg"><div id="bgHpBar" class="hp-bar-fill"></div></div>
           </div>
-          <div class="platform-enemy"></div>
-          <img id="enemySprite" class="sprite-enemy" src="">
+          <div class="slot-background"></div>
+          <img id="bgSprite" class="sprite-background" src="">
 
-          <!-- Joueur Local (Bas-Gauche, Dos) -->
-          <div class="platform-self"></div>
-          <img id="selfSprite" class="sprite-self" src="">
-          <div class="hud-self">
-            <strong id="selfPokeName">Mon Pokémon</strong>
-            <div id="selfHpText" style="font-size: 0.75em;">100/100 PV</div>
-            <div class="hp-bar-bg"><div id="selfHpBar" class="hp-bar-fill"></div></div>
+          <!-- Premier Plan (Attaquant) -->
+          <div class="slot-foreground"></div>
+          <img id="fgSprite" class="sprite-foreground" src="">
+          <div class="hud-foreground">
+            <strong id="fgPokeName">Attaquant</strong>
+            <div id="fgHpText" style="font-size: 0.75em;">100/100 PV</div>
+            <div class="hp-bar-bg"><div id="fgHpBar" class="hp-bar-fill"></div></div>
           </div>
         </div>
 
         <div id="battleLog" class="battle-log">Préparation au combat...</div>
 
+        <!-- CONTRÔLES DYNAMIQUES (ATTAQUE OU DÉFENSE) -->
         <div id="battleActionControls">
-          <button class="btn" onclick="sendAction('physique')">Attaque Physique</button>
-          <button class="btn" style="background: #a855f7; color: #fff;" onclick="sendAction('special')">Attaque Spéciale</button>
+          <div id="attackControls" class="hidden">
+            <button class="btn" onclick="sendAction('physique')">Attaque Physique</button>
+            <button class="btn" style="background: #a855f7; color: #fff;" onclick="sendAction('special')">Attaque Spéciale</button>
+          </div>
+          <div id="defenseControls" class="hidden">
+            <button class="btn" style="background: #22c55e; color: #fff;" onclick="sendAction('physiqueDef')">Défense Physique</button>
+            <button class="btn" style="background: #eab308; color: #000;" onclick="sendAction('specialDef')">Défense Spéciale</button>
+          </div>
+        </div>
+
+        <!-- REVANCHE -->
+        <div id="rematchZone" class="hidden" style="margin-top: 10px;">
+          <button class="btn" onclick="requestRematch()">Revanche (<span id="rematchCount">0</span>/2)</button>
         </div>
       </div>
 
@@ -153,6 +175,16 @@
     </div>
   </div>
 
+  <footer>
+    <button class="theme-btn" style="background:#00d2ff; color:#000" onclick="setTheme('theme-zekrom')">Zekrom</button>
+    <button class="theme-btn" style="background:#ff4500; color:#fff" onclick="setTheme('theme-reshiram')">Reshiram</button>
+    <button class="theme-btn" style="background:#9d4edd; color:#fff" onclick="setTheme('theme-lunala')">Lunala</button>
+    <button class="theme-btn" style="background:#d97706; color:#fff" onclick="setTheme('theme-heatran')">Heatran</button>
+    <button class="theme-btn" style="background:#8b5cf6; color:#fff" onclick="setTheme('theme-tenefix')">Ténéfix</button>
+    <button class="theme-btn" style="background:#f43f5e; color:#fff" onclick="setTheme('theme-eternatos')">Éthernatos</button>
+    <button class="theme-btn" style="background:#eab308; color:#000" onclick="setTheme('theme-brutalibre')">Brutalibré</button>
+  </footer>
+
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
@@ -161,6 +193,8 @@
     const avatarDefault = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png";
 
     socket.on('connect', () => { mySocketId = socket.id; });
+
+    function setTheme(t) { document.body.className = t; }
 
     function createRoom() {
       const name = document.getElementById('usernameInput').value || 'Dresseur';
@@ -189,13 +223,15 @@
 
     socket.on('startVotingPhase', (data) => {
       document.getElementById('waitingZone').classList.add('hidden');
+      document.getElementById('rematchZone').classList.add('hidden');
+      document.getElementById('battleZone').classList.add('hidden');
       document.getElementById('voteZone').classList.remove('hidden');
       renderTeams(data.players);
     });
 
     function vote(mode) {
       socket.emit('voteMode', mode);
-      document.getElementById('voteStatus').innerText = "Vote envoyé ! Attente de l'adversaire...";
+      document.getElementById('voteStatus').innerText = "Vote enregistré !";
     }
 
     socket.on('newAuction', (data) => {
@@ -217,34 +253,47 @@
 
     socket.on('auctionEnded', (data) => {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      if (data.players) renderTeams(data.players);
     });
 
+    /* COMBAT & PERMUTATION DYNAMIQUE ATTAQUE / DÉFENSE */
     socket.on('battleUpdate', (data) => {
       document.getElementById('auctionZone').classList.add('hidden');
       document.getElementById('battleZone').classList.remove('hidden');
 
-      const isP1 = (mySocketId === data.battle.p1.id);
-      const self = isP1 ? data.battle.p1 : data.battle.p2;
-      const enemy = isP1 ? data.battle.p2 : data.battle.p1;
+      const b = data.battle;
+      const isAttacker = (mySocketId === b.attackerId);
 
-      // Joueur local toujours à gauche / en bas de dos
-      if (self.poke) {
-        document.getElementById('selfPokeName').innerText = self.poke.name;
-        document.getElementById('selfSprite').src = self.poke.spriteBack;
-        updateHp('self', self.poke.hp, self.poke.hpMax);
-      }
+      const attacker = (b.attackerId === b.p1.id) ? b.p1 : b.p2;
+      const defender = (b.defenderId === b.p1.id) ? b.p1 : b.p2;
 
-      // Adversaire à droite / en haut de face
-      if (enemy.poke) {
-        document.getElementById('enemyPokeName').innerText = enemy.poke.name;
-        document.getElementById('enemySprite').src = enemy.poke.sprite;
-        updateHp('enemy', enemy.poke.hp, enemy.poke.hpMax);
-      }
+      // Premier plan : Attaquant (De dos)
+      document.getElementById('fgPokeName').innerText = `${attacker.poke.name} (${attacker.name})`;
+      document.getElementById('fgSprite').src = attacker.poke.spriteBack;
+      updateHp('fg', attacker.poke.hp, attacker.poke.hpMax);
+
+      // Second plan : Défenseur (De face)
+      document.getElementById('bgPokeName').innerText = `${defender.poke.name} (${defender.name})`;
+      document.getElementById('bgSprite').src = defender.poke.sprite;
+      updateHp('bg', defender.poke.hp, defender.poke.hpMax);
 
       document.getElementById('battleLog').innerText = data.log;
 
+      // Affichage des contrôles selon le rôle du tour
+      if (myRole === 'player') {
+        if (isAttacker) {
+          document.getElementById('attackControls').classList.remove('hidden');
+          document.getElementById('defenseControls').classList.add('hidden');
+        } else {
+          document.getElementById('defenseControls').classList.remove('hidden');
+          document.getElementById('attackControls').classList.add('hidden');
+        }
+      }
+
       if (data.gameState === 'GAME_OVER') {
-        document.getElementById('battleActionControls').classList.add('hidden');
+        document.getElementById('attackControls').classList.add('hidden');
+        document.getElementById('defenseControls').classList.add('hidden');
+        if (myRole === 'player') document.getElementById('rematchZone').classList.remove('hidden');
       }
     });
 
@@ -280,6 +329,12 @@
 
     function placeBid() { if (myRole === 'player') socket.emit('placeBid'); }
     function sendAction(type) { if (myRole === 'player') socket.emit('battleAction', type); }
+    function requestRematch() { if (myRole === 'player') socket.emit('requestRematch'); }
+
+    socket.on('rematchUpdate', (data) => {
+      document.getElementById('rematchCount').innerText = data.count;
+    });
+
     socket.on('errorMsg', (msg) => alert(msg));
   </script>
 </body>
