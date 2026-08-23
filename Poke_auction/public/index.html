@@ -2,60 +2,41 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>PokéAuction V2 - Zekrom vs Reshiram</title>
+  <title>PokéAuction V3</title>
   <style>
-    :root {
-      --bg: #0b0f19;
-      --panel: #151d30;
-      --accent: #00d2ff;
-      --text: #ffffff;
-      --subtext: #94a3b8;
-      --border: #1e293b;
-      --btn-bg: #00d2ff;
-      --btn-text: #000000;
-    }
-
-    body.reshiram-theme {
-      --bg: #f8fafc;
-      --panel: #ffffff;
-      --accent: #ff4500;
-      --text: #0f172a;
-      --subtext: #64748b;
-      --border: #e2e8f0;
-      --btn-bg: #ff4500;
-      --btn-text: #ffffff;
-    }
+    /* THÈMES SUR MESURE */
+    body.theme-zekrom { --bg: #0b0f19; --panel: #151d30; --accent: #00d2ff; --text: #ffffff; --border: #1e293b; --btn-bg: #00d2ff; --btn-text: #000; }
+    body.theme-reshiram { --bg: #f8fafc; --panel: #ffffff; --accent: #ff4500; --text: #0f172a; --border: #e2e8f0; --btn-bg: #ff4500; --btn-text: #fff; }
+    body.theme-lunala { --bg: #0b0813; --panel: #171026; --accent: #9d4edd; --text: #f3e8ff; --border: #2e1a47; --btn-bg: #9d4edd; --btn-text: #fff; }
+    body.theme-heatran { --bg: #140804; --panel: #241008; --accent: #d97706; --text: #fef3c7; --border: #451a03; --btn-bg: #d97706; --btn-text: #fff; }
+    body.theme-tenefix { --bg: #08120e; --panel: #0d221a; --accent: #10b981; --text: #ecfdf5; --border: #064e3b; --btn-bg: #10b981; --btn-text: #000; }
+    body.theme-eternatos { --bg: #110414; --panel: #210728; --accent: #f43f5e; --text: #ffe4e6; --border: #4c0519; --btn-bg: #f43f5e; --btn-text: #fff; }
+    body.theme-brutalibre { --bg: #130a06; --panel: #26130b; --accent: #eab308; --text: #fefce8; --border: #451a03; --btn-bg: #eab308; --btn-text: #000; }
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: var(--bg);
       color: var(--text);
       margin: 0;
-      padding: 0;
       display: flex;
       flex-direction: column;
       height: 100vh;
-      transition: background-color 0.4s, color 0.4s;
+      transition: all 0.3s ease;
     }
 
     header {
-      padding: 15px;
+      padding: 12px;
       text-align: center;
       background: var(--panel);
       border-bottom: 2px solid var(--accent);
     }
-    h1 { margin: 0; font-size: 1.8em; color: var(--accent); }
+    h1 { margin: 0; font-size: 1.6em; color: var(--accent); }
 
-    .main-layout {
-      display: flex;
-      flex: 1;
-      width: 100%;
-      overflow: hidden;
-    }
+    .main-layout { display: flex; flex: 1; width: 100%; overflow: hidden; }
 
-    /* Panneaux latéraux Équipes */
+    /* PANNEAU ÉQUIPES RECOLORÉ ET STYLISÉ */
     .team-panel {
-      width: 260px;
+      width: 280px;
       background: var(--panel);
       border-right: 1px solid var(--border);
       border-left: 1px solid var(--border);
@@ -63,29 +44,25 @@
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 12px;
     }
-    .team-title { font-weight: bold; border-bottom: 1px solid var(--accent); padding-bottom: 5px; color: var(--accent); }
-    .poke-slot {
+    .profile-header { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--accent); padding-bottom: 10px; }
+    .profile-header img { width: 48px; height: 48px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); }
+
+    .poke-card-slot {
       display: flex;
       align-items: center;
       gap: 10px;
       background: var(--bg);
-      padding: 8px;
-      border-radius: 8px;
+      padding: 8px 12px;
+      border-radius: 10px;
       border: 1px solid var(--border);
+      box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
     }
-    .poke-slot img { width: 50px; height: 50px; }
+    .poke-card-slot img { width: 45px; height: 45px; }
 
-    /* Zone Centrale */
-    .center-content {
-      flex: 1;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
+    /* ZONE CENTRALE */
+    .center-content { flex: 1; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
     .card {
       background: var(--panel);
@@ -93,195 +70,170 @@
       border-radius: 12px;
       padding: 25px;
       width: 100%;
-      max-width: 500px;
+      max-width: 550px;
       text-align: center;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
     }
 
-    .color-box {
-      font-size: 2em;
-      font-weight: 900;
-      color: var(--accent);
-      background: var(--bg);
-      padding: 15px;
-      border-radius: 8px;
-      margin: 15px 0;
-      text-transform: uppercase;
-      border: 1px dashed var(--accent);
-    }
+    .avatar-selector { display: flex; justify-content: center; gap: 10px; margin: 15px 0; }
+    .avatar-option { width: 50px; height: 50px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; background: var(--bg); }
+    .avatar-option.selected { border-color: var(--accent); transform: scale(1.1); }
 
-    .timer-circle {
-      font-size: 3em;
-      font-weight: bold;
-      color: #ef4444;
-    }
-
-    /* Style Bouton Miser */
-    .btn-bid {
+    .btn {
       background: var(--btn-bg);
       color: var(--btn-text);
-      font-size: 1.2em;
       font-weight: bold;
       border: none;
-      padding: 15px 30px;
-      border-radius: 30px;
+      padding: 12px 24px;
+      border-radius: 25px;
       cursor: pointer;
-      box-shadow: 0 0 15px var(--accent);
-      transition: transform 0.1s, box-shadow 0.2s;
+      font-size: 1em;
+      transition: transform 0.1s;
     }
-    .btn-bid:active { transform: scale(0.95); }
+    .btn:active { transform: scale(0.95); }
 
-    /* Scene Arena Jeu Vidéo */
-    .arena {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-      gap: 20px;
-      margin-bottom: 20px;
-    }
-    .fighter-card {
-      flex: 1;
-      background: var(--bg);
-      padding: 15px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-    }
-    .hp-bar-bg {
-      background: #334155;
-      height: 16px;
-      border-radius: 8px;
-      overflow: hidden;
-      margin-top: 5px;
-    }
-    .hp-bar-fill {
-      height: 100%;
-      width: 100%;
-      background: #22c55e;
-      transition: width 0.4s ease;
-    }
+    /* ARENA COMBAT */
+    .arena { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 15px; margin-bottom: 15px; }
+    .fighter-card { flex: 1; background: var(--bg); padding: 12px; border-radius: 10px; border: 1px solid var(--border); }
+    .hp-bar-bg { background: #334155; height: 14px; border-radius: 7px; overflow: hidden; margin-top: 5px; }
+    .hp-bar-fill { height: 100%; width: 100%; background: #22c55e; transition: width 0.4s ease; }
 
-    .battle-log {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      padding: 12px;
-      border-radius: 8px;
-      color: var(--accent);
-      min-height: 50px;
-      margin-bottom: 15px;
-      font-weight: bold;
-    }
+    .battle-log { background: var(--bg); border: 1px solid var(--border); padding: 10px; border-radius: 8px; color: var(--accent); min-height: 45px; margin-bottom: 15px; font-weight: bold; }
 
-    footer {
-      padding: 10px;
-      text-align: center;
-      background: var(--panel);
-      border-top: 1px solid var(--border);
-    }
-
-    .theme-toggle {
-      background: var(--text);
-      color: var(--bg);
-      border: none;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+    footer { padding: 10px; text-align: center; background: var(--panel); border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+    .theme-btn { border: none; padding: 6px 12px; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 0.85em; }
 
     .hidden { display: none !important; }
   </style>
 </head>
-<body>
+<body class="theme-zekrom">
 
   <header>
-    <h1>PokéAuction V2</h1>
-    <div id="roleBadge" style="margin-top: 5px; font-weight: bold; color: var(--subtext);">Connexion...</div>
+    <h1>PokéAuction V3</h1>
+    <div id="roleBadge" style="margin-top: 3px; font-size: 0.9em; opacity: 0.8;">Connexion...</div>
   </header>
 
   <div class="main-layout">
     <!-- Équipe Joueur 1 (Gauche) -->
     <div class="team-panel">
-      <div class="team-title">Équipe Joueur 1</div>
-      <div id="j1Budget">Solde: 900 🪙</div>
-      <div id="j1Team"></div>
+      <div class="profile-header">
+        <img id="j1Avatar" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/1.png">
+        <div>
+          <strong id="j1Name">Joueur 1</strong>
+          <div id="j1Budget" style="font-size: 0.9em; color: var(--accent);">Solde: 900 🪙</div>
+        </div>
+      </div>
+      <div id="j1Team" style="display: flex; flex-direction: column; gap: 8px;"></div>
     </div>
 
     <!-- Zone de jeu Centrale -->
     <div class="center-content">
-      <div id="status" style="margin-bottom: 15px; color: var(--subtext);">En attente des joueurs...</div>
-
-      <!-- Phase Enchère -->
-      <div id="auctionZone" class="card hidden">
-        <h2 style="margin:0;">Enchère Mystère</h2>
-        <p style="color: var(--subtext);">Couleur de la forme Shiny :</p>
-        <div id="pokeColor" class="color-box">???</div>
-        
-        <div class="timer-circle" id="timer">15</div>
-        <p>Plus haute mise : <strong id="highestBid" style="color: var(--accent);">0</strong> 🪙 (<span id="highestBidder">Personne</span>)</p>
-
-        <div id="bidControls" style="margin-top: 20px;">
-          <button class="btn-bid" onclick="placeBid()">Miser +50 🪙</button>
+      
+      <!-- Phase 0: Configuration Profil -->
+      <div id="lobbyZone" class="card">
+        <h2>Création de votre Dresseur</h2>
+        <input type="text" id="usernameInput" placeholder="Entrez votre Pseudo" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); text-align: center; font-size: 1em;">
+        <p style="margin-top: 15px; margin-bottom: 5px;">Choisissez votre Avatar :</p>
+        <div class="avatar-selector">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/1.png" class="avatar-option selected" onclick="selectAvatar(this)">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/2.png" class="avatar-option" onclick="selectAvatar(this)">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/235.png" class="avatar-option" onclick="selectAvatar(this)">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/101.png" class="avatar-option" onclick="selectAvatar(this)">
         </div>
+        <button class="btn" onclick="confirmProfile()">Valider et Jouer</button>
       </div>
 
-      <!-- Phase Combat -->
-      <div id="battleZone" class="card hidden" style="max-width: 650px;">
-        <h2>Combat Pokémon</h2>
+      <!-- Phase 1: Enchères -->
+      <div id="auctionZone" class="card hidden">
+        <h2 style="margin:0;">Enchère Mystère</h2>
+        <p style="color: var(--accent); font-weight: bold; margin: 5px 0;">Indice Couleur Forme Shiny :</p>
+        <div id="pokeColor" style="font-size: 2em; font-weight: 900; background: var(--bg); padding: 10px; border-radius: 8px; margin: 10px 0; text-transform: uppercase;">???</div>
+        <div style="font-size: 2.5em; font-weight: bold; color: #ef4444;" id="timer">15</div>
+        <p>Mise maximale : <strong id="highestBid" style="color: var(--accent);">0</strong> 🪙 (<span id="highestBidder">Personne</span>)</p>
+        <div id="bidControls"><button class="btn" onclick="placeBid()">Miser +50 🪙</button></div>
+      </div>
 
+      <!-- Phase 2: Combat -->
+      <div id="battleZone" class="card hidden" style="max-width: 600px;">
+        <h2>Arena Pokémon</h2>
         <div class="arena">
-          <!-- Joueur 1 -->
           <div class="fighter-card">
             <strong id="p1FighterName">J1</strong>
-            <img id="p1Sprite" src="" style="display:block; margin: auto; height: 80px;">
+            <img id="p1Sprite" src="" style="display:block; margin: auto; height: 70px;">
             <div id="p1HpText">100/100 PV</div>
             <div class="hp-bar-bg"><div id="p1HpBar" class="hp-bar-fill"></div></div>
           </div>
-
-          <div style="font-weight: bold; font-size: 1.5em; color: var(--accent);">VS</div>
-
-          <!-- Joueur 2 -->
+          <div style="font-weight: bold; font-size: 1.2em; color: var(--accent);">VS</div>
           <div class="fighter-card">
             <strong id="p2FighterName">J2</strong>
-            <img id="p2Sprite" src="" style="display:block; margin: auto; height: 80px;">
+            <img id="p2Sprite" src="" style="display:block; margin: auto; height: 70px;">
             <div id="p2HpText">100/100 PV</div>
             <div class="hp-bar-bg"><div id="p2HpBar" class="hp-bar-fill"></div></div>
           </div>
         </div>
-
         <div id="battleLog" class="battle-log">Préparation du combat...</div>
-
         <div id="battleActionControls">
-          <p id="actionInstruction" style="margin-bottom: 10px;">Choisissez votre coup :</p>
-          <button class="btn-bid" style="font-size: 1em; padding: 10px 20px;" onclick="sendAction('physique')">Physique</button>
-          <button class="btn-bid" style="font-size: 1em; padding: 10px 20px; background: #a855f7; color: #fff;" onclick="sendAction('special')">Spécial</button>
+          <p id="actionInstruction" style="margin-bottom: 8px;">Choisissez votre coup :</p>
+          <button class="btn" onclick="sendAction('physique')">Physique</button>
+          <button class="btn" style="background: #a855f7; color: #fff;" onclick="sendAction('special')">Spécial</button>
+        </div>
+
+        <!-- Bouton Revanche -->
+        <div id="rematchZone" class="hidden" style="margin-top: 15px;">
+          <button class="btn" onclick="requestRematch()">Demander la Revanche (<span id="rematchCount">0</span>/2)</button>
         </div>
       </div>
+
     </div>
 
     <!-- Équipe Joueur 2 (Droite) -->
     <div class="team-panel">
-      <div class="team-title">Équipe Joueur 2</div>
-      <div id="j2Budget">Solde: 900 🪙</div>
-      <div id="j2Team"></div>
+      <div class="profile-header">
+        <img id="j2Avatar" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/2.png">
+        <div>
+          <strong id="j2Name">Joueur 2</strong>
+          <div id="j2Budget" style="font-size: 0.9em; color: var(--accent);">Solde: 900 🪙</div>
+        </div>
+      </div>
+      <div id="j2Team" style="display: flex; flex-direction: column; gap: 8px;"></div>
     </div>
   </div>
 
   <footer>
-    <button class="theme-toggle" onclick="toggleTheme()">Changer de Thème (Zekrom / Reshiram)</button>
+    <button class="theme-btn" style="background:#00d2ff; color:#000" onclick="setTheme('theme-zekrom')">Zekrom</button>
+    <button class="theme-btn" style="background:#ff4500; color:#fff" onclick="setTheme('theme-reshiram')">Reshiram</button>
+    <button class="theme-btn" style="background:#9d4edd; color:#fff" onclick="setTheme('theme-lunala')">Lunala</button>
+    <button class="theme-btn" style="background:#d97706; color:#fff" onclick="setTheme('theme-heatran')">Heatran</button>
+    <button class="theme-btn" style="background:#10b981; color:#000" onclick="setTheme('theme-tenefix')">Ténéfix</button>
+    <button class="theme-btn" style="background:#f43f5e; color:#fff" onclick="setTheme('theme-eternatos')">Éthernatos</button>
+    <button class="theme-btn" style="background:#eab308; color:#000" onclick="setTheme('theme-brutalibre')">Brutalibré</button>
   </footer>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
     let myRole = 'spectator';
-    let myId = null;
+    let selectedAvatarUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/1.png";
+
+    function setTheme(themeName) { document.body.className = themeName; }
+
+    function selectAvatar(el) {
+      document.querySelectorAll('.avatar-option').forEach(img => img.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedAvatarUrl = el.src;
+    }
+
+    function confirmProfile() {
+      const name = document.getElementById('usernameInput').value;
+      socket.emit('setProfile', { name, avatar: selectedAvatarUrl });
+      document.getElementById('lobbyZone').classList.add('hidden');
+    }
 
     socket.on('roleAssignment', (data) => {
       myRole = data.role;
-      myId = data.id;
-      document.getElementById('roleBadge').innerText = myRole === 'player' ? `Rôle : ${data.name}` : "Rôle : Spectateur";
+      document.getElementById('roleBadge').innerText = myRole === 'player' ? "Mode : Joueur" : "Mode : Spectateur";
       if (myRole !== 'player') {
+        document.getElementById('lobbyZone').classList.add('hidden');
         document.getElementById('bidControls').classList.add('hidden');
         document.getElementById('battleActionControls').classList.add('hidden');
       }
@@ -292,7 +244,7 @@
     });
 
     socket.on('newAuction', (data) => {
-      document.getElementById('status').innerText = "Une nouvelle enchère a commencé !";
+      document.getElementById('lobbyZone').classList.add('hidden');
       document.getElementById('auctionZone').classList.remove('hidden');
       document.getElementById('battleZone').classList.add('hidden');
       document.getElementById('pokeColor').innerText = data.color;
@@ -301,9 +253,7 @@
       renderTeams(data.players);
     });
 
-    socket.on('timerTick', (time) => {
-      document.getElementById('timer').innerText = time;
-    });
+    socket.on('timerTick', (time) => { document.getElementById('timer').innerText = time; });
 
     socket.on('bidUpdated', (data) => {
       document.getElementById('highestBid').innerText = data.currentBid.amount;
@@ -311,30 +261,16 @@
       document.getElementById('timer').innerText = data.timeLeft;
     });
 
-    socket.on('auctionEnded', (data) => {
-      if (data.winnerName) {
-        document.getElementById('status').innerText = `${data.winnerName} remporte ${data.pokeName} pour ${data.price} 🪙 !`;
-      } else {
-        document.getElementById('status').innerText = "Personne n'a misé.";
-      }
-    });
-
-    socket.on('autoAssigned', (data) => {
-      document.getElementById('status').innerText = `${data.playerName} ayant une équipe incomplète, il reçoit automatiquement ${data.pokeName} !`;
-    });
-
     socket.on('battleUpdate', (data) => {
       document.getElementById('auctionZone').classList.add('hidden');
       document.getElementById('battleZone').classList.remove('hidden');
 
-      // Maj Joueur 1
       if (data.p1.poke) {
         document.getElementById('p1FighterName').innerText = `${data.p1.name} (${data.p1.poke.name})`;
         document.getElementById('p1Sprite').src = data.p1.poke.sprite;
         updateHp('p1', data.p1.poke.stats.hp, data.p1.poke.stats.maxHp);
       }
 
-      // Maj Joueur 2
       if (data.p2.poke) {
         document.getElementById('p2FighterName').innerText = `${data.p2.name} (${data.p2.poke.name})`;
         document.getElementById('p2Sprite').src = data.p2.poke.sprite;
@@ -343,10 +279,14 @@
 
       document.getElementById('battleLog').innerText = data.log;
 
-      if (myRole === 'player') {
-        const isAttacker = myId === data.attackerId;
-        document.getElementById('actionInstruction').innerText = isAttacker ? "C'est à votre tour d'ATTAQUER !" : "C'est à votre tour de DEFENDRE !";
+      if (data.gameState === 'GAME_OVER') {
+        document.getElementById('battleActionControls').classList.add('hidden');
+        if (myRole === 'player') document.getElementById('rematchZone').classList.remove('hidden');
       }
+    });
+
+    socket.on('rematchStatus', (data) => {
+      document.getElementById('rematchCount').innerText = data.count;
     });
 
     function updateHp(prefix, current, max) {
@@ -354,19 +294,17 @@
       const bar = document.getElementById(`${prefix}HpBar`);
       bar.style.width = `${pct}%`;
       document.getElementById(`${prefix}HpText`).innerText = `${current}/${max} PV`;
-
-      if (pct < 25) bar.style.background = '#ef4444';
-      else if (pct < 50) bar.style.background = '#facc15';
-      else bar.style.background = '#22c55e';
     }
 
     function renderTeams(players) {
       const pKeys = Object.keys(players);
       if (pKeys.length >= 1) {
         const j1 = players[pKeys[0]];
+        document.getElementById('j1Name').innerText = j1.name;
+        document.getElementById('j1Avatar').src = j1.avatar;
         document.getElementById('j1Budget').innerText = `Solde: ${j1.budget} 🪙`;
         document.getElementById('j1Team').innerHTML = j1.team.map(p => `
-          <div class="poke-slot">
+          <div class="poke-card-slot">
             <img src="${p.sprite}" />
             <div><strong>${p.name}</strong></div>
           </div>
@@ -374,9 +312,11 @@
       }
       if (pKeys.length >= 2) {
         const j2 = players[pKeys[1]];
+        document.getElementById('j2Name').innerText = j2.name;
+        document.getElementById('j2Avatar').src = j2.avatar;
         document.getElementById('j2Budget').innerText = `Solde: ${j2.budget} 🪙`;
         document.getElementById('j2Team').innerHTML = j2.team.map(p => `
-          <div class="poke-slot">
+          <div class="poke-card-slot">
             <img src="${p.sprite}" />
             <div><strong>${p.name}</strong></div>
           </div>
@@ -384,17 +324,9 @@
       }
     }
 
-    function placeBid() {
-      if (myRole === 'player') socket.emit('placeBid');
-    }
-
-    function sendAction(type) {
-      if (myRole === 'player') socket.emit('submitBattleAction', type);
-    }
-
-    function toggleTheme() {
-      document.body.classList.toggle('reshiram-theme');
-    }
+    function placeBid() { if (myRole === 'player') socket.emit('placeBid'); }
+    function sendAction(type) { if (myRole === 'player') socket.emit('submitBattleAction', type); }
+    function requestRematch() { if (myRole === 'player') socket.emit('requestRematch'); }
   </script>
 </body>
 </html>
