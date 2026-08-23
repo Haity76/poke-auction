@@ -4,58 +4,21 @@
   <meta charset="UTF-8">
   <title>Pokémon Enchères & Combat</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: #1a1a1a;
-      color: #fff;
-      margin: 0;
-      padding: 20px;
-    }
-    .box {
-      border: 2px solid #444;
-      padding: 20px;
-      margin: 20px auto;
-      max-width: 500px;
-      background: #2a2a2a;
-      border-radius: 10px;
-    }
-    .color-display {
-      font-size: 2em;
-      font-weight: bold;
-      color: #ffd700;
-      margin: 15px 0;
-      text-transform: uppercase;
-    }
-    button {
-      padding: 10px 20px;
-      margin: 8px;
-      font-size: 1em;
-      cursor: pointer;
-      border: none;
-      border-radius: 5px;
-      background-color: #008cba;
-      color: white;
-    }
-    button:hover {
-      background-color: #005f73;
-    }
-    input {
-      padding: 10px;
-      font-size: 1em;
-      width: 150px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    .hidden {
-      display: none;
-    }
+    body { font-family: Arial, sans-serif; text-align: center; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; }
+    .box { border: 2px solid #444; padding: 20px; margin: 20px auto; max-width: 500px; background: #2a2a2a; border-radius: 10px; }
+    .color-display { font-size: 2em; font-weight: bold; color: #ffd700; margin: 15px 0; text-transform: uppercase; }
+    button { padding: 10px 20px; margin: 8px; font-size: 1em; cursor: pointer; border: none; border-radius: 5px; background-color: #008cba; color: white; }
+    button:hover { background-color: #005f73; }
+    input { padding: 10px; font-size: 1em; width: 150px; border-radius: 5px; border: 1px solid #ccc; }
+    .hidden { display: none; }
+    .role-badge { background: #555; padding: 5px 10px; border-radius: 15px; font-size: 0.9em; display: inline-block; margin-bottom: 10px; }
   </style>
 </head>
 <body>
 
   <h1>Enchères & Combat Pokémon</h1>
-  <div id="status">En attente d'un deuxième joueur...</div>
+  <div id="roleBadge" class="role-badge">Connexion...</div>
+  <div id="status">En attente des joueurs...</div>
 
   <!-- PHASE ENCHÈRE -->
   <div id="auctionZone" class="box hidden">
@@ -64,7 +27,8 @@
     <div id="pokeColor" class="color-display">???</div>
     <p>Temps restant : <span id="timer" style="font-weight: bold; color: #ff4d4d;">10</span>s</p>
     <p>Meilleure offre actuelle : <span id="highestBid">0</span> pièces</p>
-    <div>
+    
+    <div id="playerAuctionControls">
       <input type="number" id="bidInput" placeholder="Votre offre">
       <button onclick="sendBid()">Miser</button>
     </div>
@@ -74,19 +38,34 @@
   <div id="battleZone" class="box hidden">
     <h2>Phase de Combat</h2>
     <div id="battleLog" style="margin-bottom: 20px; font-size: 1.1em; color: #00e676;"></div>
-    <h3>Choisissez le type d'attaque / défense :</h3>
-    <button onclick="sendAction('physique')">Physique (Atk / Def)</button>
-    <button onclick="sendAction('special')">Spécial (Atk Spé / Def Spé)</button>
+    
+    <div id="playerBattleControls">
+      <h3>Choisissez votre action :</h3>
+      <button onclick="sendAction('physique')">Physique (Atk / Def)</button>
+      <button onclick="sendAction('special')">Spécial (Atk Spé / Def Spé)</button>
+    </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
+    let myRole = 'spectator';
     let myId = null;
 
-    socket.on('playerAssignment', (data) => {
+    socket.on('roleAssignment', (data) => {
+      myRole = data.role;
       myId = data.id;
-      document.getElementById('status').innerText = `Connecté ! (Votre ID: ${myId})`;
+
+      const badge = document.getElementById('roleBadge');
+      if (myRole === 'player') {
+        badge.innerText = "Mode : JOUEUR";
+        badge.style.background = "#2e7d32";
+      } else {
+        badge.innerText = "Mode : SPECTATEUR";
+        badge.style.background = "#1565c0";
+        document.getElementById('playerAuctionControls').classList.add('hidden');
+        document.getElementById('playerBattleControls').classList.add('hidden');
+      }
     });
 
     socket.on('newAuction', (data) => {
@@ -107,35 +86,37 @@
     });
 
     socket.on('auctionEnded', (data) => {
-  if (data.winnerId) {
-    const isMe = data.winnerId === myId;
-    alert(`L'enchère est terminée ! ${isMe ? 'VOUS avez remporté' : 'L\'adversaire a remporté'} le Pokémon mystère pour ${data.price} pièces.`);
-  } else {
-    alert("Personne n'a misé !");
-  }
-});
+      if (data.winnerId) {
+        const isMe = data.winnerId === myId;
+        const msg = myRole === 'player'
+          ? (isMe ? 'VOUS avez remporté' : 'L\'adversaire a remporté')
+          : 'Le joueur a remporté';
+        
+        document.getElementById('status').innerText = `Enchère terminée ! ${msg} le Pokémon mystère pour ${data.price} pièces.`;
+      } else {
+        document.getElementById('status').innerText = "Personne n'a misé !";
+      }
+    });
 
     socket.on('startBattle', (data) => {
       document.getElementById('auctionZone').classList.add('hidden');
       document.getElementById('battleZone').classList.remove('hidden');
-      document.getElementById('battleLog').innerText = "Le combat commence ! Choisissez Physique ou Spécial.";
+      document.getElementById('battleLog').innerText = `Combat : ${data.p1Name} VS ${data.p2Name} !`;
     });
 
     socket.on('turnResult', (data) => {
-      const isAttackerMe = data.attackerId === myId;
       document.getElementById('battleLog').innerText = 
-        `${isAttackerMe ? 'Votre' : 'Le'} ${data.attackerPoke} est plus rapide et attaque ! ` +
-        `Dégâts infligés au ${data.defenderPoke} : ${data.damage} PV.`;
+        `${data.attackerPoke} est plus rapide et attaque ! Dégâts infligés au ${data.defenderPoke} : ${data.damage} PV.`;
     });
 
     function sendBid() {
+      if (myRole !== 'player') return;
       const amount = parseInt(document.getElementById('bidInput').value);
-      if (amount && amount > 0) {
-        socket.emit('placeBid', amount);
-      }
+      if (amount && amount > 0) socket.emit('placeBid', amount);
     }
 
     function sendAction(statType) {
+      if (myRole !== 'player') return;
       socket.emit('submitAction', { stat: statType });
       document.getElementById('battleLog').innerText = "Choix enregistré ! En attente de l'adversaire...";
     }
