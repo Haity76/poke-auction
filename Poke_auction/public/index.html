@@ -9,7 +9,10 @@
     body.theme-reshiram { --bg: #f8fafc; --panel: #ffffff; --accent: #ff4500; --text: #0f172a; --border: #e2e8f0; --btn-bg: #ff4500; --btn-text: #fff; }
     body.theme-lunala { --bg: #0b0813; --panel: #171026; --accent: #9d4edd; --text: #f3e8ff; --border: #2e1a47; --btn-bg: #9d4edd; --btn-text: #fff; }
     body.theme-heatran { --bg: #140804; --panel: #241008; --accent: #d97706; --text: #fef3c7; --border: #451a03; --btn-bg: #d97706; --btn-text: #fff; }
-    body.theme-tenefix { --bg: #08120e; --panel: #0d221a; --accent: #10b981; --text: #ecfdf5; --border: #064e3b; --btn-bg: #10b981; --btn-text: #000; }
+    
+    /* VRAI THÈME TÉNÉFIX (Violet obscur + Joyau Émeraude) */
+    body.theme-tenefix { --bg: #120b1d; --panel: #1e132f; --accent: #10b981; --text: #f3e8ff; --border: #3b2161; --btn-bg: #8b5cf6; --btn-text: #ffffff; }
+    
     body.theme-eternatos { --bg: #110414; --panel: #210728; --accent: #f43f5e; --text: #ffe4e6; --border: #4c0519; --btn-bg: #f43f5e; --btn-text: #fff; }
     body.theme-brutalibre { --bg: #130a06; --panel: #26130b; --accent: #eab308; --text: #fefce8; --border: #451a03; --btn-bg: #eab308; --btn-text: #000; }
 
@@ -34,7 +37,7 @@
 
     .main-layout { display: flex; flex: 1; width: 100%; overflow: hidden; }
 
-    /* PANNEAU ÉQUIPES RECOLORÉ ET STYLISÉ */
+    /* PANNEAU ÉQUIPES */
     .team-panel {
       width: 280px;
       background: var(--panel);
@@ -47,7 +50,7 @@
       gap: 12px;
     }
     .profile-header { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--accent); padding-bottom: 10px; }
-    .profile-header img { width: 48px; height: 48px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); }
+    .profile-header img { width: 48px; height: 48px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); object-fit: contain; }
 
     .poke-card-slot {
       display: flex;
@@ -75,8 +78,8 @@
       box-shadow: 0 10px 25px rgba(0,0,0,0.4);
     }
 
-    .avatar-selector { display: flex; justify-content: center; gap: 10px; margin: 15px 0; }
-    .avatar-option { width: 50px; height: 50px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; background: var(--bg); }
+    .avatar-selector { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
+    .avatar-option { width: 55px; height: 55px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; background: var(--bg); object-fit: contain; padding: 3px; }
     .avatar-option.selected { border-color: var(--accent); transform: scale(1.1); }
 
     .btn {
@@ -117,7 +120,7 @@
     <!-- Équipe Joueur 1 (Gauche) -->
     <div class="team-panel">
       <div class="profile-header">
-        <img id="j1Avatar" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/1.png">
+        <img id="j1Avatar" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
         <div>
           <strong id="j1Name">Joueur 1</strong>
           <div id="j1Budget" style="font-size: 0.9em; color: var(--accent);">Solde: 900 🪙</div>
@@ -135,10 +138,10 @@
         <input type="text" id="usernameInput" placeholder="Entrez votre Pseudo" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); text-align: center; font-size: 1em;">
         <p style="margin-top: 15px; margin-bottom: 5px;">Choisissez votre Avatar :</p>
         <div class="avatar-selector">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/1.png" class="avatar-option selected" onclick="selectAvatar(this)">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/2.png" class="avatar-option" onclick="selectAvatar(this)">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/235.png" class="avatar-option" onclick="selectAvatar(this)">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/101.png" class="avatar-option" onclick="selectAvatar(this)">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="avatar-option selected" onclick="selectAvatar(this)">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png" class="avatar-option" onclick="selectAvatar(this)">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png" class="avatar-option" onclick="selectAvatar(this)">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/luxury-ball.png" class="avatar-option" onclick="selectAvatar(this)">
         </div>
         <button class="btn" onclick="confirmProfile()">Valider et Jouer</button>
       </div>
@@ -178,7 +181,6 @@
           <button class="btn" style="background: #a855f7; color: #fff;" onclick="sendAction('special')">Spécial</button>
         </div>
 
-        <!-- Bouton Revanche -->
         <div id="rematchZone" class="hidden" style="margin-top: 15px;">
           <button class="btn" onclick="requestRematch()">Demander la Revanche (<span id="rematchCount">0</span>/2)</button>
         </div>
@@ -189,7 +191,7 @@
     <!-- Équipe Joueur 2 (Droite) -->
     <div class="team-panel">
       <div class="profile-header">
-        <img id="j2Avatar" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/2.png">
+        <img id="j2Avatar" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png">
         <div>
           <strong id="j2Name">Joueur 2</strong>
           <div id="j2Budget" style="font-size: 0.9em; color: var(--accent);">Solde: 900 🪙</div>
@@ -204,7 +206,7 @@
     <button class="theme-btn" style="background:#ff4500; color:#fff" onclick="setTheme('theme-reshiram')">Reshiram</button>
     <button class="theme-btn" style="background:#9d4edd; color:#fff" onclick="setTheme('theme-lunala')">Lunala</button>
     <button class="theme-btn" style="background:#d97706; color:#fff" onclick="setTheme('theme-heatran')">Heatran</button>
-    <button class="theme-btn" style="background:#10b981; color:#000" onclick="setTheme('theme-tenefix')">Ténéfix</button>
+    <button class="theme-btn" style="background:#8b5cf6; color:#fff" onclick="setTheme('theme-tenefix')">Ténéfix</button>
     <button class="theme-btn" style="background:#f43f5e; color:#fff" onclick="setTheme('theme-eternatos')">Éthernatos</button>
     <button class="theme-btn" style="background:#eab308; color:#000" onclick="setTheme('theme-brutalibre')">Brutalibré</button>
   </footer>
@@ -213,7 +215,7 @@
   <script>
     const socket = io();
     let myRole = 'spectator';
-    let selectedAvatarUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/1.png";
+    let selectedAvatarUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png";
 
     function setTheme(themeName) { document.body.className = themeName; }
 
