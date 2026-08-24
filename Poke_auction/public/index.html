@@ -43,13 +43,15 @@
     .avatar-option { width: 50px; height: 50px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; background: var(--bg); padding: 4px; margin: auto; }
     .avatar-option.selected { border-color: var(--accent); transform: scale(1.1); }
 
-    /* CENTRE POKEMON (Boutique) */
+    /* CENTRE POKEMON (SHOP) */
     .shop-scene { background: linear-gradient(180deg, #fdba74 0%, #ea580c 100%); border: 3px solid #c2410c; padding: 15px; border-radius: 12px; color: #fff;}
     .shop-items-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; }
     .shop-item { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; cursor: pointer; border: 2px solid transparent;}
     .shop-item.selected { border-color: #22c55e; background: rgba(34,197,94,0.3); }
     .poke-select-grid { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
     .poke-select-btn { background: var(--bg); border: 2px solid var(--border); border-radius: 8px; padding: 5px; cursor: pointer; color: var(--text); width: 80px;}
+    
+    .instruction-banner { background: #0f172a; border: 2px dashed #22c55e; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; font-size: 0.95em; color: #22c55e;}
 
     /* COMBAT 2.5D */
     .battle-scene { position: relative; width: 100%; height: 260px; background: linear-gradient(180deg, #334155 0%, #0f172a 100%); border-radius: 12px; border: 2px solid var(--border); overflow: hidden; margin-bottom: 15px; }
@@ -65,7 +67,6 @@
     .hp-bar-fill { height: 100%; background: #22c55e; transition: width 0.3s; }
     .battle-log { background: var(--bg); border: 1px solid var(--border); padding: 10px; border-radius: 8px; color: var(--accent); font-weight: bold; margin-bottom: 10px; }
 
-    /* OVERLAY DÉCONNEXION */
     #disconnectOverlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
     footer { padding: 8px; text-align: center; background: var(--panel); border-top: 1px solid var(--border); }
@@ -81,7 +82,6 @@
   </header>
 
   <div class="main-layout">
-    <!-- PANEL GAUCHE -->
     <div class="team-panel">
       <div class="profile-header">
         <img id="myAvatar" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
@@ -93,17 +93,14 @@
       <div id="myTeam"></div>
     </div>
 
-    <!-- ZONE CENTRALE -->
     <div class="center-content">
       
-      <!-- OVERLAY DECO -->
       <div id="disconnectOverlay" class="hidden">
         <h2 style="color: #ef4444;">Adversaire déconnecté !</h2>
         <p>Le salon sera détruit si l'adversaire ne revient pas dans :</p>
         <div id="decoTimer" style="font-size: 3em; font-weight: bold; color: var(--accent);">20</div>
       </div>
 
-      <!-- LOBBY -->
       <div id="lobbyZone" class="card">
         <h2>Entrez dans l'Arène</h2>
         <input type="text" id="usernameInput" placeholder="Votre Pseudo" value="Dresseur">
@@ -123,7 +120,6 @@
         <button class="btn" onclick="joinRoom()">Rejoindre Salon</button>
       </div>
 
-      <!-- ATTENTE & VOTE -->
       <div id="waitingZone" class="card hidden">
         <h2>Salon : <span id="displayRoomCode" style="color: var(--accent);"></span></h2>
         <p>Partagez ce code. En attente...</p>
@@ -136,31 +132,32 @@
         <p id="voteStatus" style="color: var(--accent); font-weight: bold;"></p>
       </div>
 
-      <!-- ENCHÈRE -->
       <div id="auctionZone" class="card hidden">
         <h2>Enchère</h2>
-        <p id="pokeRarity" style="font-weight: bold;"></p>
+        <p id="pokeRarity" style="font-weight: bold; padding: 5px; border-radius: 6px; display: inline-block; background: var(--bg);"></p>
         <p id="pokeHint" style="font-size: 1.5em; font-weight: 900; background: var(--bg); padding: 10px; border-radius: 8px;">???</p>
         <div style="font-size: 2.2em; color: #ef4444;" id="timer">12</div>
         <p>Max : <strong id="highestBid" style="color: var(--accent);">0</strong> 🪙 (<span id="highestBidder">Personne</span>)</p>
         <button class="btn" onclick="placeBid()">Miser +50 🪙</button>
       </div>
 
-      <!-- CENTRE POKEMON (SHOP) -->
+      <!-- CENTRE POKEMON (CLARIFIÉ) -->
       <div id="shopZone" class="card hidden shop-scene">
         <h2 style="margin-top:0;">Centre Pokémon</h2>
-        <p>Achetez vos objets de combat ! Cliquez sur un objet puis sur le Pokémon.</p>
         
-        <button class="btn" style="background:#eab308; color:#000;" onclick="selectShopAction('reroll')">Lootbox Reroll (150 🪙)</button>
+        <!-- BANDEAU D'INSTRUCTIONS -->
+        <div class="instruction-banner">
+          👉 1. Cliquez sur un objet en haut<br>
+          👉 2. Cliquez sur votre Pokémon en bas pour lui donner !
+        </div>
+        
+        <button class="btn" style="background:#eab308; color:#000;" onclick="selectShopAction('reroll', this)">Lootbox Échange (150 🪙)</button>
         
         <div id="shopItemsContainer" class="shop-items-grid"></div>
-        
         <div id="shopTeamContainer" class="poke-select-grid"></div>
-        
         <button class="btn" style="margin-top:20px; background:#22c55e;" onclick="setShopReady()">Prêt au combat !</button>
       </div>
 
-      <!-- COMBAT -->
       <div id="battleZone" class="card hidden">
         <div class="battle-scene">
           <div class="hud-background">
@@ -201,7 +198,6 @@
 
     </div>
 
-    <!-- PANEL DROITE -->
     <div class="team-panel">
       <div class="profile-header">
         <img id="opponentAvatar" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
@@ -233,6 +229,25 @@
     let activeShopAction = null; 
     let decoInterval = null;
 
+    // CHARGEMENT LOCALSTORAGE (Sauvegarde Pseudo / Avatar)
+    window.onload = () => {
+      const savedName = localStorage.getItem('pokeauc_username');
+      const savedAvatar = localStorage.getItem('pokeauc_avatar');
+      if (savedName) document.getElementById('usernameInput').value = savedName;
+      if (savedAvatar) {
+        selectedAvatarUrl = savedAvatar;
+        document.querySelectorAll('.avatar-option').forEach(img => {
+          img.classList.remove('selected');
+          if (img.src === savedAvatar) img.classList.add('selected');
+        });
+      }
+    };
+
+    function saveProfile() {
+      localStorage.setItem('pokeauc_username', document.getElementById('usernameInput').value || 'Dresseur');
+      localStorage.setItem('pokeauc_avatar', selectedAvatarUrl);
+    }
+
     socket.on('connect', () => { mySocketId = socket.id; });
     function setTheme(t) { document.body.className = t; }
     function selectAvatar(el) {
@@ -240,17 +255,25 @@
       el.classList.add('selected');
       selectedAvatarUrl = el.src;
     }
-    function createRoom() { socket.emit('createRoom', { name: document.getElementById('usernameInput').value || 'Dresseur', avatar: selectedAvatarUrl }); }
+    
+    function createRoom() { 
+      saveProfile();
+      socket.emit('createRoom', { name: document.getElementById('usernameInput').value || 'Dresseur', avatar: selectedAvatarUrl }); 
+    }
+    
     function joinRoom() { 
       const code = document.getElementById('roomCodeInput').value.trim();
-      if (code) socket.emit('joinRoom', { roomCode: code, name: document.getElementById('usernameInput').value || 'Dresseur', avatar: selectedAvatarUrl }); 
+      if (code) {
+        saveProfile();
+        socket.emit('joinRoom', { roomCode: code, name: document.getElementById('usernameInput').value || 'Dresseur', avatar: selectedAvatarUrl }); 
+      }
     }
+    
     function leaveRoom() {
       socket.emit('leaveRoom');
       window.location.reload();
     }
 
-    // GESTION DÉCONNEXION
     socket.on('playerDisconnectedCount', (data) => {
       document.getElementById('disconnectOverlay').classList.remove('hidden');
       let time = data.time;
@@ -293,7 +316,6 @@
       if (data.players) renderTeams(data.players);
     });
 
-    // SHOP
     socket.on('enterShop', (data) => {
       switchZone('shopZone');
       renderTeams(data.players);
@@ -306,12 +328,17 @@
         </div>
       `).join('');
 
-      document.getElementById('shopTeamContainer').innerHTML = myData.team.map((poke, index) => `
-        <div class="poke-select-btn" onclick="applyShopAction(${index})">
-          <img src="${poke.sprite}" style="width:40px;"><br>
-          <small>${poke.hp}/${poke.hpMax} PV</small>
-        </div>
-      `).join('');
+      // Le spectateur ne voit pas les boutons pour interagir avec la team
+      if (myRole === 'player' && myData) {
+        document.getElementById('shopTeamContainer').innerHTML = myData.team.map((poke, index) => `
+          <div class="poke-select-btn rarity-${poke.rarity}" onclick="applyShopAction(${index})">
+            <img src="${poke.sprite}" style="width:40px;"><br>
+            <small>${poke.hp}/${poke.hpMax} PV</small>
+          </div>
+        `).join('');
+      } else {
+        document.getElementById('shopTeamContainer').innerHTML = "";
+      }
     });
 
     function selectShopAction(actionId, el) {
@@ -319,28 +346,30 @@
       document.querySelectorAll('.shop-item').forEach(i => i.classList.remove('selected'));
       if(el) el.classList.add('selected');
     }
+    
     function applyShopAction(pokeIndex) {
-      if (!activeShopAction) return alert("Sélectionnez d'abord un objet ou la Lootbox !");
+      if (!activeShopAction) return alert("Sélectionnez d'abord un objet en haut ou la Lootbox !");
       if (activeShopAction === 'reroll') socket.emit('rerollPokemon', pokeIndex);
       else socket.emit('buyItem', { itemId: activeShopAction, pokeIndex });
       activeShopAction = null;
       document.querySelectorAll('.shop-item').forEach(i => i.classList.remove('selected'));
     }
+    
     socket.on('shopUpdate', (data) => {
       renderTeams(data.players);
       const myData = Object.values(data.players).find(p => p.id === mySocketId);
-      if(myData && document.getElementById('shopZone').classList.contains('hidden') === false) {
+      if(myRole === 'player' && myData && !document.getElementById('shopZone').classList.contains('hidden')) {
          document.getElementById('shopTeamContainer').innerHTML = myData.team.map((poke, index) => `
-          <div class="poke-select-btn" onclick="applyShopAction(${index})">
+          <div class="poke-select-btn rarity-${poke.rarity}" onclick="applyShopAction(${index})">
             <img src="${poke.sprite}" style="width:40px;"><br>
             <small>${poke.hp}/${poke.hpMax} PV</small>
           </div>
         `).join('');
       }
     });
+    
     function setShopReady() { socket.emit('setShopReady'); document.getElementById('shopZone').innerHTML = "<h2>En attente de l'adversaire...</h2>"; }
 
-    // COMBAT
     socket.on('battleUpdate', (data) => {
       switchZone('battleZone');
       const b = data.battle;
@@ -387,7 +416,7 @@
 
       const me = players[myKey];
       if (me) {
-        document.getElementById('myName').innerText = me.name + " (Moi)";
+        document.getElementById('myName').innerText = me.name + (myRole === 'player' ? " (Moi)" : "");
         document.getElementById('myAvatar').src = me.avatar;
         document.getElementById('myBudget').innerText = `Solde: ${me.budget} 🪙`;
         document.getElementById('myTeam').innerHTML = me.team.map(p => `
@@ -428,7 +457,7 @@
     function requestRematch() { if (myRole === 'player') socket.emit('requestRematch'); }
     
     socket.on('rematchUpdate', (data) => { document.getElementById('rematchCount').innerText = data.count; });
-    socket.on('errorMsg', (msg) => { alert(msg); if(msg.includes("quitté")) window.location.reload(); });
+    socket.on('errorMsg', (msg) => { alert(msg); if(msg.includes("quitté") || msg.includes("déconnecté définitivement")) window.location.reload(); });
   </script>
 </body>
 </html>
