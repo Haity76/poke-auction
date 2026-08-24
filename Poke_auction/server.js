@@ -11,22 +11,23 @@ app.use(express.static('public'));
 
 const rooms = {};
 
+// Liste des objets avec descriptions pour les infobulles
 const SHOP_ITEMS = [
-  { id: 'potion', name: 'Potion', type: 'heal', value: 50, price: 50, weight: 15 },
-  { id: 'super_potion', name: 'Super Potion', type: 'heal', value: 100, price: 80, weight: 10 },
-  { id: 'rappel', name: 'Rappel', type: 'revive', value: 0.5, price: 200, weight: 2 },
-  { id: 'sitrus', name: 'Baie Sitrus', type: 'held', price: 100, weight: 12 },
-  { id: 'bandeau', name: 'Bandeau Muscle', type: 'held', price: 120, weight: 12 },
-  { id: 'lunettes', name: 'Lunettes Choix', type: 'held', price: 120, weight: 12 },
-  { id: 'restes', name: 'Restes', type: 'held', price: 150, weight: 8 },
-  { id: 'veste', name: 'Veste de Combat', type: 'held', price: 140, weight: 7 },
-  { id: 'casque', name: 'Casque Brut', type: 'held', price: 150, weight: 7 },
-  { id: 'fuite', name: 'Bouton Fuite', type: 'held', price: 150, weight: 5 },
-  { id: 'orbe', name: 'Orbe Vie', type: 'held', price: 180, weight: 3 },
-  { id: 'grelot', name: 'Grelot Coque', type: 'held', price: 170, weight: 3 },
-  { id: 'ceinture', name: 'Ceinture Force', type: 'held', price: 180, weight: 2 },
-  { id: 'poudre', name: 'Poudre Claire', type: 'held', price: 160, weight: 1 },
-  { id: 'cartouche', name: 'Cartouche Rouge', type: 'held', price: 250, weight: 1 }
+  { id: 'potion', name: 'Potion', type: 'heal', value: 50, price: 50, weight: 15, desc: 'Rend 50 PV à un Pokémon.' },
+  { id: 'super_potion', name: 'Super Potion', type: 'heal', value: 100, price: 80, weight: 10, desc: 'Rend 100 PV à un Pokémon.' },
+  { id: 'rappel', name: 'Rappel', type: 'revive', value: 0.5, price: 200, weight: 2, desc: 'Réanime un Pokémon K.O. avec 50% de ses PV.' },
+  { id: 'sitrus', name: 'Baie Sitrus', type: 'held', price: 100, weight: 12, desc: 'Restaure 30 PV si les PV tombent sous 50%.' },
+  { id: 'bandeau', name: 'Bandeau Muscle', type: 'held', price: 120, weight: 12, desc: '+20% de dégâts sur les Attaques Physiques.' },
+  { id: 'lunettes', name: 'Lunettes Choix', type: 'held', price: 120, weight: 12, desc: '+20% de dégâts sur les Attaques Spéciales.' },
+  { id: 'restes', name: 'Restes', type: 'held', price: 150, weight: 8, desc: 'Régénère 10 PV à la fin de chaque tour.' },
+  { id: 'veste', name: 'Veste de Combat', type: 'held', price: 140, weight: 7, desc: 'Déf. Spéciale +30%, mais Déf. Physique -10%.' },
+  { id: 'casque', name: 'Casque Brut', type: 'held', price: 150, weight: 7, desc: 'Inflige 15 dégâts de recul sur une Attaque Physique.' },
+  { id: 'fuite', name: 'Bouton Fuite', type: 'held', price: 150, weight: 5, desc: 'Rappelle ce Pokémon au milieu du tour.' },
+  { id: 'orbe', name: 'Orbe Vie', type: 'held', price: 180, weight: 3, desc: '+30% de dégâts, mais perd 10% de ses PV Max par coup.' },
+  { id: 'grelot', name: 'Grelot Coque', type: 'held', price: 170, weight: 3, desc: 'Soigne 20% des dégâts infligés (Vol de Vie).' },
+  { id: 'ceinture', name: 'Ceinture Force', type: 'held', price: 180, weight: 2, desc: 'Survit avec 1 PV à une attaque mortelle (1 usage).' },
+  { id: 'poudre', name: 'Poudre Claire', type: 'held', price: 160, weight: 1, desc: '15% de chances d\'esquiver totalement une attaque.' },
+  { id: 'cartouche', name: 'Cartouche Rouge', type: 'held', price: 250, weight: 1, desc: 'Force l\'adversaire à changer de Pokémon actif.' }
 ];
 
 const colorTranslations = { black: 'Noir', blue: 'Bleu', brown: 'Brun / Marron', gray: 'Gris', green: 'Vert', pink: 'Rose', purple: 'Violet', red: 'Rouge', white: 'Blanc', yellow: 'Jaune' };
@@ -36,10 +37,8 @@ async function getRandomPokemon() {
   try {
     const pokeRes = await axios.get(`https://pokeapi.co/api/v2/pokemon/${id}`);
     const speciesRes = await axios.get(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
-
     const nameFr = speciesRes.data.names.find(n => n.language.name === 'fr')?.name || pokeRes.data.name;
     const colorRaw = speciesRes.data.color.name;
-    
     const stats = pokeRes.data.stats.map(s => s.base_stat);
     const bst = stats.reduce((a, b) => a + b, 0);
     
@@ -56,7 +55,6 @@ async function getRandomPokemon() {
       item: null
     };
   } catch (err) {
-    console.error("Erreur PokéAPI :", err.message);
     return null;
   }
 }
@@ -83,13 +81,7 @@ io.on('connection', (socket) => {
     const roomCode = generateRoomCode();
     currentRoom = roomCode;
     socket.join(roomCode);
-
-    rooms[roomCode] = {
-      code: roomCode, players: {}, host: socket.id, state: 'LOBBY', votes: {}, chosenMode: 'shiny',
-      currentAuction: null, auctionTimer: null, battleState: null, rematchVotes: new Set(), shopItems: [],
-      disconnectTimeout: null
-    };
-
+    rooms[roomCode] = { code: roomCode, players: {}, host: socket.id, state: 'LOBBY', votes: {}, chosenMode: 'shiny', currentAuction: null, auctionTimer: null, battleState: null, rematchVotes: new Set(), shopItems: [], disconnectTimeout: null };
     rooms[roomCode].players[socket.id] = { id: socket.id, name: userData.name, avatar: userData.avatar, budget: 900, team: [], role: 'player', connected: true, ready: false };
     socket.emit('roomCreated', { roomCode, role: 'player' });
   });
@@ -132,14 +124,12 @@ io.on('connection', (socket) => {
     const role = activePlayers < 2 ? 'player' : 'spectator';
     
     room.players[socket.id] = { id: socket.id, name, avatar, budget: 900, team: [], role, connected: true, ready: false };
-
     socket.emit('roomJoined', { roomCode, role });
     
     if (role === 'player' && activePlayers + 1 === 2 && room.state === 'LOBBY') {
       room.state = 'VOTING';
       io.to(roomCode).emit('startVotingPhase', { players: room.players });
     } else if (role === 'spectator') {
-      // Rattrapage de l'état pour le spectateur
       if (room.state === 'VOTING') socket.emit('startVotingPhase', { players: room.players });
       else if (room.state === 'AUCTION') {
          socket.emit('newAuction', { hint: room.currentAuction?.hint, rarity: room.currentAuction?.pokemon?.rarity, players: room.players });
@@ -166,7 +156,6 @@ io.on('connection', (socket) => {
     if (!room || room.state !== 'AUCTION' || !room.currentAuction) return;
     const player = room.players[socket.id];
     if (!player || player.role !== 'player' || player.team.length >= 3) return;
-
     const newBid = room.currentAuction.highestBid + 50;
     if (player.budget >= newBid) {
       room.currentAuction.highestBid = newBid;
@@ -183,14 +172,11 @@ io.on('connection', (socket) => {
     const player = room.players[socket.id];
     const itemDef = SHOP_ITEMS.find(i => i.id === itemId);
     const poke = player.team[pokeIndex];
-
     if (!itemDef || !poke || player.budget < itemDef.price) return;
-
     if (itemDef.type === 'heal' && poke.hp > 0) poke.hp = Math.min(poke.hpMax, poke.hp + itemDef.value);
     else if (itemDef.type === 'revive' && poke.hp === 0) poke.hp = Math.floor(poke.hpMax * itemDef.value);
     else if (itemDef.type === 'held') poke.item = itemDef;
     else return;
-
     player.budget -= itemDef.price;
     io.to(currentRoom).emit('shopUpdate', { players: room.players });
   });
@@ -199,7 +185,6 @@ io.on('connection', (socket) => {
     const room = rooms[currentRoom];
     if (!room || room.state !== 'SHOP') return;
     const player = room.players[socket.id];
-    
     if (player.budget >= 150 && player.team[pokeIndex]) {
       player.budget -= 150;
       const newPoke = await getRandomPokemon();
@@ -256,7 +241,6 @@ io.on('connection', (socket) => {
       if (room.players[socket.id]) {
         const isPlayer = room.players[socket.id].role === 'player';
         room.players[socket.id].connected = false;
-        
         if (isPlayer) {
           io.to(currentRoom).emit('playerDisconnectedCount', { time: 20 });
           room.disconnectTimeout = setTimeout(() => {
@@ -280,10 +264,7 @@ async function startNextAuction(roomCode) {
   if (!poke) return setTimeout(() => startNextAuction(roomCode), 1000);
 
   let hintText = room.chosenMode === 'shiny' ? `Couleur : ${poke.color}` : room.chosenMode === 'pokedex' ? `Pokédex N° : #${poke.id}` : 'Masqué';
-
   room.currentAuction = { pokemon: poke, highestBid: 0, highestBidder: null, highestBidderName: 'Personne', timeLeft: 12 };
-  
-  // Inclure la rareté dans les indices cachés pour l'affichage visuel
   io.to(roomCode).emit('newAuction', { hint: hintText, rarity: poke.rarity, players: room.players });
 
   if (room.auctionTimer) clearInterval(room.auctionTimer);
@@ -353,17 +334,7 @@ function startBattle(roomCode) {
   const players = Object.values(room.players).filter(p => p.role === 'player');
   const p1 = players[0], p2 = players[1];
 
-  room.battleState = {
-    p1: { id: p1.id, name: p1.name },
-    p2: { id: p2.id, name: p2.name },
-    p1ActiveIndex: 0,
-    p2ActiveIndex: 0,
-    attackerId: p1.id,
-    defenderId: p2.id,
-    attackerAction: null,
-    defenderAction: null
-  };
-
+  room.battleState = { p1: { id: p1.id, name: p1.name }, p2: { id: p2.id, name: p2.name }, p1ActiveIndex: 0, p2ActiveIndex: 0, attackerId: p1.id, defenderId: p2.id, attackerAction: null, defenderAction: null };
   sendBattleUpdate(roomCode, `Le combat commence ! ${p1.name} attaque en premier.`);
 }
 
@@ -373,7 +344,6 @@ function resolveTurn(roomCode) {
   
   const attackerPlayer = room.players[b.attackerId];
   const defenderPlayer = room.players[b.defenderId];
-  
   const attackerActiveIdx = b.attackerId === b.p1.id ? b.p1ActiveIndex : b.p2ActiveIndex;
   const defenderActiveIdx = b.defenderId === b.p1.id ? b.p1ActiveIndex : b.p2ActiveIndex;
   
@@ -400,10 +370,7 @@ function resolveTurn(roomCode) {
   let log = `${atkPoke.name} attaque et inflige ${dmg} dégâts à ${defPoke.name} !`;
 
   defPoke.hp -= dmg;
-  if (defPoke.hp <= 0 && defPoke.item && defPoke.item.id === 'ceinture') {
-    defPoke.hp = 1; defPoke.item = null;
-    log += ` ${defPoke.name} survit grâce à sa Ceinture Force !`;
-  }
+  if (defPoke.hp <= 0 && defPoke.item && defPoke.item.id === 'ceinture') { defPoke.hp = 1; defPoke.item = null; log += ` ${defPoke.name} survit grâce à sa Ceinture Force !`; }
   if (defPoke.hp < 0) defPoke.hp = 0;
 
   if (atkPoke.item && atkPoke.item.id === 'orbe') {
@@ -426,11 +393,8 @@ function resolveTurn(roomCode) {
   }
 
   let forceSwitchId = null;
-  if (defPoke.hp > 0 && defPoke.item && defPoke.item.id === 'fuite') {
-    defPoke.item = null; forceSwitchId = b.defenderId; log += ` Bouton Fuite activé !`;
-  } else if (defPoke.hp > 0 && atkPoke.item && atkPoke.item.id === 'cartouche') {
-    atkPoke.item = null; forceSwitchId = b.defenderId; log += ` Cartouche Rouge force l'adversaire à changer !`;
-  }
+  if (defPoke.hp > 0 && defPoke.item && defPoke.item.id === 'fuite') { defPoke.item = null; forceSwitchId = b.defenderId; log += ` Bouton Fuite activé !`; } 
+  else if (defPoke.hp > 0 && atkPoke.item && atkPoke.item.id === 'cartouche') { atkPoke.item = null; forceSwitchId = b.defenderId; log += ` Cartouche Rouge force l'adversaire à changer !`; }
 
   const nextAtkIdx = getFirstAliveIndex(attackerPlayer.team);
   const nextDefIdx = forceSwitchId === b.defenderId ? getFirstAliveIndex(defenderPlayer.team.filter((p,i)=> i!==defenderActiveIdx && p.hp>0)) : getFirstAliveIndex(defenderPlayer.team);
@@ -458,8 +422,8 @@ function sendBattleUpdate(roomCode, logMsg) {
   const b = room.battleState;
   io.to(roomCode).emit('battleUpdate', {
     battle: b,
-    p1Poke: room.players[b.p1.id].team[b.p1ActiveIndex],
-    p2Poke: room.players[b.p2.id].team[b.p2ActiveIndex],
+    p1Team: room.players[b.p1.id].team,
+    p2Team: room.players[b.p2.id].team,
     log: logMsg,
     gameState: room.state
   });
@@ -470,8 +434,8 @@ function sendBattleUpdateToSocket(socketId, roomCode, logMsg) {
   const b = room.battleState;
   io.to(socketId).emit('battleUpdate', {
     battle: b,
-    p1Poke: room.players[b.p1.id].team[b.p1ActiveIndex],
-    p2Poke: room.players[b.p2.id].team[b.p2ActiveIndex],
+    p1Team: room.players[b.p1.id].team,
+    p2Team: room.players[b.p2.id].team,
     log: logMsg,
     gameState: room.state
   });

@@ -21,7 +21,7 @@
     .main-layout { display: flex; flex: 1; overflow: hidden; }
     .team-panel { width: 280px; background: var(--panel); border-left: 1px solid var(--border); border-right: 1px solid var(--border); padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
     .profile-header { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--accent); padding-bottom: 10px; }
-    .profile-header img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--accent); object-fit: contain; }
+    .profile-header img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; background: var(--bg);}
 
     .poke-card-slot { display: flex; align-items: center; gap: 10px; background: var(--bg); padding: 6px; border-radius: 8px; border: 1px solid var(--border); position: relative;}
     .poke-card-slot img { width: 45px; height: 45px; }
@@ -40,35 +40,48 @@
     input { padding: 8px; border-radius: 6px; border: 1px solid var(--border); text-align: center; margin: 5px;}
 
     .avatar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
-    .avatar-option { width: 50px; height: 50px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; background: var(--bg); padding: 4px; margin: auto; }
+    .avatar-option { width: 60px; height: 60px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; background: var(--bg); padding: 4px; margin: auto; object-fit: cover;}
     .avatar-option.selected { border-color: var(--accent); transform: scale(1.1); }
 
-    /* CENTRE POKEMON (SHOP) */
+    /* CENTRE POKEMON (SHOP) avec Infobulles */
     .shop-scene { background: linear-gradient(180deg, #fdba74 0%, #ea580c 100%); border: 3px solid #c2410c; padding: 15px; border-radius: 12px; color: #fff;}
     .shop-items-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; }
-    .shop-item { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; cursor: pointer; border: 2px solid transparent;}
+    
+    .shop-item { position: relative; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; cursor: pointer; border: 2px solid transparent;}
     .shop-item.selected { border-color: #22c55e; background: rgba(34,197,94,0.3); }
+    
+    .item-tooltip { display: none; position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%); background-color: var(--panel); color: var(--text); border: 2px solid var(--accent); padding: 8px 12px; border-radius: 8px; width: max-content; max-width: 200px; z-index: 100; font-size: 0.85em; box-shadow: 0 4px 10px rgba(0,0,0,0.6); pointer-events: none; text-align: center; }
+    .shop-item:hover .item-tooltip { display: block; }
+
     .poke-select-grid { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
     .poke-select-btn { background: var(--bg); border: 2px solid var(--border); border-radius: 8px; padding: 5px; cursor: pointer; color: var(--text); width: 80px;}
-    
     .instruction-banner { background: #0f172a; border: 2px dashed #22c55e; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; font-size: 0.95em; color: #22c55e;}
 
-    /* COMBAT 2.5D */
+    /* COMBAT 2.5D AVEC ANIMATION DE SWITCH (V9) */
     .battle-scene { position: relative; width: 100%; height: 260px; background: linear-gradient(180deg, #334155 0%, #0f172a 100%); border-radius: 12px; border: 2px solid var(--border); overflow: hidden; margin-bottom: 15px; }
-    .slot-foreground { position: absolute; bottom: 20px; left: 40px; width: 180px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 50%; transform: scaleY(0.5); }
-    .sprite-foreground { position: absolute; bottom: 25px; left: 70px; height: 120px; z-index: 3; }
-    .hud-foreground { position: absolute; bottom: 15px; right: 15px; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 8px; width: 180px; text-align: left; }
     
-    .slot-background { position: absolute; top: 50px; right: 40px; width: 140px; height: 40px; background: rgba(255,255,255,0.15); border-radius: 50%; transform: scaleY(0.5); }
-    .sprite-background { position: absolute; top: 10px; right: 65px; height: 90px; z-index: 2; }
-    .hud-background { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 8px; width: 180px; text-align: left; }
+    .poke-wrapper { position: absolute; transition: all 0.6s ease-in-out; display: flex; flex-direction: column; align-items: center;}
+    .poke-wrapper .slot { position: absolute; border-radius: 50%; transform: scaleY(0.5); }
+    .poke-wrapper img { position: absolute; z-index: 2; transition: all 0.6s ease-in-out; }
+    .poke-wrapper .hud { position: absolute; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 8px; width: 180px; text-align: left; }
+
+    /* Attaquant (Premier Plan) */
+    .is-attacker { bottom: 20px; left: 40px; width: 200px; height: 160px; z-index: 3; }
+    .is-attacker .slot { bottom: 0; left: 10px; width: 180px; height: 50px; background: rgba(255,255,255,0.2); }
+    .is-attacker img { bottom: 5px; left: 40px; height: 120px; }
+    .is-attacker .hud { bottom: 5px; left: 200px; }
+
+    /* Défenseur (Arrière Plan) */
+    .is-defender { top: 30px; right: 40px; width: 150px; height: 120px; z-index: 2; }
+    .is-defender .slot { top: 40px; right: 5px; width: 140px; height: 40px; background: rgba(255,255,255,0.15); }
+    .is-defender img { top: -10px; right: 30px; height: 90px; }
+    .is-defender .hud { top: -20px; right: 160px; }
 
     .hp-bar-bg { background: #334155; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 4px; }
     .hp-bar-fill { height: 100%; background: #22c55e; transition: width 0.3s; }
     .battle-log { background: var(--bg); border: 1px solid var(--border); padding: 10px; border-radius: 8px; color: var(--accent); font-weight: bold; margin-bottom: 10px; }
 
     #disconnectOverlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-
     footer { padding: 8px; text-align: center; background: var(--panel); border-top: 1px solid var(--border); }
     .theme-btn { border: none; padding: 5px 10px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 0.8em; margin: 0 3px;}
     .hidden { display: none !important; }
@@ -84,7 +97,7 @@
   <div class="main-layout">
     <div class="team-panel">
       <div class="profile-header">
-        <img id="myAvatar" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
+        <img id="myAvatar" src="https://play.pokemonshowdown.com/sprites/trainers/red.png">
         <div>
           <strong id="myName">Moi</strong>
           <div id="myBudget" style="color: var(--accent);">Solde: 900 🪙</div>
@@ -104,15 +117,16 @@
       <div id="lobbyZone" class="card">
         <h2>Entrez dans l'Arène</h2>
         <input type="text" id="usernameInput" placeholder="Votre Pseudo" value="Dresseur">
+        <p style="margin-top: 10px; font-size: 0.9em;">Choisissez votre Dresseur :</p>
         <div class="avatar-grid">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="avatar-option selected" onclick="selectAvatar(this)">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png" class="avatar-option" onclick="selectAvatar(this)">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png" class="avatar-option" onclick="selectAvatar(this)">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png" class="avatar-option" onclick="selectAvatar(this)">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/luxury-ball.png" class="avatar-option" onclick="selectAvatar(this)">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/timer-ball.png" class="avatar-option" onclick="selectAvatar(this)">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/premier-ball.png" class="avatar-option" onclick="selectAvatar(this)">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dusk-ball.png" class="avatar-option" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/red.png" class="avatar-option selected" title="Red" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/blue.png" class="avatar-option" title="Blue" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/ethan.png" class="avatar-option" title="Luth" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/lyra.png" class="avatar-option" title="Célesta" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/brendan.png" class="avatar-option" title="Brice" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/may.png" class="avatar-option" title="Flora" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/lucas.png" class="avatar-option" title="Louka" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/dawn.png" class="avatar-option" title="Aurore" onclick="selectAvatar(this)">
         </div>
         <button class="btn" onclick="createRoom()">Créer un Salon</button>
         <hr style="border-color: var(--border); margin: 15px 0;">
@@ -124,6 +138,7 @@
         <h2>Salon : <span id="displayRoomCode" style="color: var(--accent);"></span></h2>
         <p>Partagez ce code. En attente...</p>
       </div>
+      
       <div id="voteZone" class="card hidden">
         <h2>Vote du Mode</h2>
         <button class="btn" onclick="vote('shiny')">Couleurs Shiny</button>
@@ -141,18 +156,13 @@
         <button class="btn" onclick="placeBid()">Miser +50 🪙</button>
       </div>
 
-      <!-- CENTRE POKEMON (CLARIFIÉ) -->
       <div id="shopZone" class="card hidden shop-scene">
         <h2 style="margin-top:0;">Centre Pokémon</h2>
-        
-        <!-- BANDEAU D'INSTRUCTIONS -->
         <div class="instruction-banner">
           👉 1. Cliquez sur un objet en haut<br>
           👉 2. Cliquez sur votre Pokémon en bas pour lui donner !
         </div>
-        
         <button class="btn" style="background:#eab308; color:#000;" onclick="selectShopAction('reroll', this)">Lootbox Échange (150 🪙)</button>
-        
         <div id="shopItemsContainer" class="shop-items-grid"></div>
         <div id="shopTeamContainer" class="poke-select-grid"></div>
         <button class="btn" style="margin-top:20px; background:#22c55e;" onclick="setShopReady()">Prêt au combat !</button>
@@ -160,21 +170,29 @@
 
       <div id="battleZone" class="card hidden">
         <div class="battle-scene">
-          <div class="hud-background">
-            <strong id="bgPokeName">Défenseur</strong>
-            <div id="bgHpText" style="font-size: 0.75em;"></div>
-            <div class="hp-bar-bg"><div id="bgHpBar" class="hp-bar-fill"></div></div>
+          
+          <!-- Wrapper Joueur 1 (La classe is-attacker ou is-defender gère sa position) -->
+          <div id="p1Wrapper" class="poke-wrapper is-attacker">
+            <div class="slot"></div>
+            <img id="p1SpriteAnim" src="">
+            <div class="hud">
+              <strong id="p1NameAnim">P1</strong>
+              <div id="p1HpTextAnim" style="font-size: 0.75em;"></div>
+              <div class="hp-bar-bg"><div id="p1HpBarAnim" class="hp-bar-fill"></div></div>
+            </div>
           </div>
-          <div class="slot-background"></div>
-          <img id="bgSprite" class="sprite-background" src="">
 
-          <div class="slot-foreground"></div>
-          <img id="fgSprite" class="sprite-foreground" src="">
-          <div class="hud-foreground">
-            <strong id="fgPokeName">Attaquant</strong>
-            <div id="fgHpText" style="font-size: 0.75em;"></div>
-            <div class="hp-bar-bg"><div id="fgHpBar" class="hp-bar-fill"></div></div>
+          <!-- Wrapper Joueur 2 -->
+          <div id="p2Wrapper" class="poke-wrapper is-defender">
+            <div class="slot"></div>
+            <img id="p2SpriteAnim" src="">
+            <div class="hud">
+              <strong id="p2NameAnim">P2</strong>
+              <div id="p2HpTextAnim" style="font-size: 0.75em;"></div>
+              <div class="hp-bar-bg"><div id="p2HpBarAnim" class="hp-bar-fill"></div></div>
+            </div>
           </div>
+
         </div>
 
         <div id="battleLog" class="battle-log">Préparation...</div>
@@ -200,7 +218,7 @@
 
     <div class="team-panel">
       <div class="profile-header">
-        <img id="opponentAvatar" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
+        <img id="opponentAvatar" src="https://play.pokemonshowdown.com/sprites/trainers/blue.png">
         <div>
           <strong id="opponentName">En attente...</strong>
           <div id="opponentBudget" style="color: var(--accent);">Solde: 900 🪙</div>
@@ -225,11 +243,10 @@
     const socket = io();
     let mySocketId = null;
     let myRole = 'spectator';
-    let selectedAvatarUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png";
+    let selectedAvatarUrl = "https://play.pokemonshowdown.com/sprites/trainers/red.png";
     let activeShopAction = null; 
     let decoInterval = null;
 
-    // CHARGEMENT LOCALSTORAGE (Sauvegarde Pseudo / Avatar)
     window.onload = () => {
       const savedName = localStorage.getItem('pokeauc_username');
       const savedAvatar = localStorage.getItem('pokeauc_avatar');
@@ -256,23 +273,12 @@
       selectedAvatarUrl = el.src;
     }
     
-    function createRoom() { 
-      saveProfile();
-      socket.emit('createRoom', { name: document.getElementById('usernameInput').value || 'Dresseur', avatar: selectedAvatarUrl }); 
-    }
-    
+    function createRoom() { saveProfile(); socket.emit('createRoom', { name: document.getElementById('usernameInput').value || 'Dresseur', avatar: selectedAvatarUrl }); }
     function joinRoom() { 
       const code = document.getElementById('roomCodeInput').value.trim();
-      if (code) {
-        saveProfile();
-        socket.emit('joinRoom', { roomCode: code, name: document.getElementById('usernameInput').value || 'Dresseur', avatar: selectedAvatarUrl }); 
-      }
+      if (code) { saveProfile(); socket.emit('joinRoom', { roomCode: code, name: document.getElementById('usernameInput').value || 'Dresseur', avatar: selectedAvatarUrl }); }
     }
-    
-    function leaveRoom() {
-      socket.emit('leaveRoom');
-      window.location.reload();
-    }
+    function leaveRoom() { socket.emit('leaveRoom'); window.location.reload(); }
 
     socket.on('playerDisconnectedCount', (data) => {
       document.getElementById('disconnectOverlay').classList.remove('hidden');
@@ -280,8 +286,7 @@
       document.getElementById('decoTimer').innerText = time;
       if(decoInterval) clearInterval(decoInterval);
       decoInterval = setInterval(() => {
-        time--;
-        document.getElementById('decoTimer').innerText = time;
+        time--; document.getElementById('decoTimer').innerText = time;
         if(time <= 0) clearInterval(decoInterval);
       }, 1000);
     });
@@ -311,10 +316,7 @@
       document.getElementById('highestBidder').innerText = data.highestBidderName;
       document.getElementById('timer').innerText = data.timeLeft;
     });
-    socket.on('auctionEnded', (data) => {
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-      if (data.players) renderTeams(data.players);
-    });
+    socket.on('auctionEnded', (data) => { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); if (data.players) renderTeams(data.players); });
 
     socket.on('enterShop', (data) => {
       switchZone('shopZone');
@@ -325,10 +327,10 @@
         <div class="shop-item" onclick="selectShopAction('${item.id}', this)">
           <strong>${item.name}</strong><br>
           <small>${item.price} 🪙</small>
+          <div class="item-tooltip">${item.desc}</div>
         </div>
       `).join('');
 
-      // Le spectateur ne voit pas les boutons pour interagir avec la team
       if (myRole === 'player' && myData) {
         document.getElementById('shopTeamContainer').innerHTML = myData.team.map((poke, index) => `
           <div class="poke-select-btn rarity-${poke.rarity}" onclick="applyShopAction(${index})">
@@ -336,9 +338,7 @@
             <small>${poke.hp}/${poke.hpMax} PV</small>
           </div>
         `).join('');
-      } else {
-        document.getElementById('shopTeamContainer').innerHTML = "";
-      }
+      } else { document.getElementById('shopTeamContainer').innerHTML = ""; }
     });
 
     function selectShopAction(actionId, el) {
@@ -370,24 +370,36 @@
     
     function setShopReady() { socket.emit('setShopReady'); document.getElementById('shopZone').innerHTML = "<h2>En attente de l'adversaire...</h2>"; }
 
+    // ANIMATION DE COMBAT
     socket.on('battleUpdate', (data) => {
       switchZone('battleZone');
       const b = data.battle;
-      const isAttacker = (mySocketId === b.attackerId);
+      const p1Data = data.p1Team[b.p1ActiveIndex];
+      const p2Data = data.p2Team[b.p2ActiveIndex];
+      
+      const isP1Attacker = (b.attackerId === b.p1.id);
+      
+      // Update P1 UI
+      document.getElementById('p1NameAnim').innerText = `${p1Data.name} (${b.p1.name})`;
+      document.getElementById('p1HpTextAnim').innerText = `${p1Data.hp}/${p1Data.hpMax} PV`;
+      document.getElementById('p1HpBarAnim').style.width = `${Math.max(0, (p1Data.hp / p1Data.hpMax) * 100)}%`;
+      document.getElementById('p1Wrapper').className = `poke-wrapper ${isP1Attacker ? 'is-attacker' : 'is-defender'}`;
+      document.getElementById('p1SpriteAnim').src = isP1Attacker ? p1Data.spriteBack : p1Data.sprite;
 
-      document.getElementById('fgPokeName').innerText = `${data.p1Poke.name} (${b.attackerId === b.p1.id ? b.p1.name : b.p2.name})`;
-      document.getElementById('fgSprite').src = data.p1Poke.spriteBack;
-      updateHp('fg', data.p1Poke.hp, data.p1Poke.hpMax);
-
-      document.getElementById('bgPokeName').innerText = `${data.p2Poke.name} (${b.defenderId === b.p1.id ? b.p1.name : b.p2.name})`;
-      document.getElementById('bgSprite').src = data.p2Poke.sprite;
-      updateHp('bg', data.p2Poke.hp, data.p2Poke.hpMax);
+      // Update P2 UI
+      document.getElementById('p2NameAnim').innerText = `${p2Data.name} (${b.p2.name})`;
+      document.getElementById('p2HpTextAnim').innerText = `${p2Data.hp}/${p2Data.hpMax} PV`;
+      document.getElementById('p2HpBarAnim').style.width = `${Math.max(0, (p2Data.hp / p2Data.hpMax) * 100)}%`;
+      document.getElementById('p2Wrapper').className = `poke-wrapper ${!isP1Attacker ? 'is-attacker' : 'is-defender'}`;
+      document.getElementById('p2SpriteAnim').src = !isP1Attacker ? p2Data.spriteBack : p2Data.sprite;
 
       document.getElementById('battleLog').innerText = data.log;
 
+      // Controls
+      const isMyTurnToAttack = (mySocketId === b.attackerId);
       if (myRole === 'player' && data.gameState !== 'GAME_OVER') {
         document.getElementById('endGameControls').classList.add('hidden');
-        if (isAttacker) {
+        if (isMyTurnToAttack) {
           document.getElementById('attackControls').classList.remove('hidden');
           document.getElementById('defenseControls').classList.add('hidden');
         } else {
@@ -402,12 +414,6 @@
         if (myRole === 'player') document.getElementById('endGameControls').classList.remove('hidden');
       }
     });
-
-    function updateHp(prefix, hp, max) {
-      const pct = Math.max(0, (hp / max) * 100);
-      document.getElementById(`${prefix}HpBar`).style.width = `${pct}%`;
-      document.getElementById(`${prefix}HpText`).innerText = `${hp}/${max} PV`;
-    }
 
     function renderTeams(players) {
       const keys = Object.keys(players);
@@ -448,10 +454,7 @@
       });
       document.getElementById(activeZoneId).classList.remove('hidden');
     }
-    function updateBadges(code) {
-      document.getElementById('displayRoomCode').innerText = code;
-      document.getElementById('roomBadge').innerText = `Salon: ${code}`;
-    }
+    function updateBadges(code) { document.getElementById('displayRoomCode').innerText = code; document.getElementById('roomBadge').innerText = `Salon: ${code}`; }
     function placeBid() { if (myRole === 'player') socket.emit('placeBid'); }
     function sendAction(type) { if (myRole === 'player') socket.emit('battleAction', type); }
     function requestRematch() { if (myRole === 'player') socket.emit('requestRematch'); }
