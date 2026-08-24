@@ -11,7 +11,6 @@ app.use(express.static('public'));
 
 const rooms = {};
 
-// Liste des objets avec descriptions pour les infobulles
 const SHOP_ITEMS = [
   { id: 'potion', name: 'Potion', type: 'heal', value: 50, price: 50, weight: 15, desc: 'Rend 50 PV à un Pokémon.' },
   { id: 'super_potion', name: 'Super Potion', type: 'heal', value: 100, price: 80, weight: 10, desc: 'Rend 100 PV à un Pokémon.' },
@@ -31,6 +30,7 @@ const SHOP_ITEMS = [
 ];
 
 const colorTranslations = { black: 'Noir', blue: 'Bleu', brown: 'Brun / Marron', gray: 'Gris', green: 'Vert', pink: 'Rose', purple: 'Violet', red: 'Rouge', white: 'Blanc', yellow: 'Jaune' };
+const ARENA_TYPES = ['stadium', 'forest', 'volcano', 'ocean'];
 
 async function getRandomPokemon() {
   const id = Math.floor(Math.random() * 1025) + 1;
@@ -334,13 +334,22 @@ function startBattle(roomCode) {
   const players = Object.values(room.players).filter(p => p.role === 'player');
   const p1 = players[0], p2 = players[1];
 
-  room.battleState = { p1: { id: p1.id, name: p1.name }, p2: { id: p2.id, name: p2.name }, p1ActiveIndex: 0, p2ActiveIndex: 0, attackerId: p1.id, defenderId: p2.id, attackerAction: null, defenderAction: null };
-  sendBattleUpdate(roomCode, `Le combat commence ! ${p1.name} attaque en premier.`);
+  room.battleState = { 
+    arena: ARENA_TYPES[Math.floor(Math.random() * ARENA_TYPES.length)],
+    lastDamage: null,
+    p1: { id: p1.id, name: p1.name }, 
+    p2: { id: p2.id, name: p2.name }, 
+    p1ActiveIndex: 0, p2ActiveIndex: 0, 
+    attackerId: p1.id, defenderId: p2.id, 
+    attackerAction: null, defenderAction: null 
+  };
+  sendBattleUpdate(roomCode, `L'arène est sélectionnée. Le combat commence ! ${p1.name} attaque en premier.`);
 }
 
 function resolveTurn(roomCode) {
   const room = rooms[roomCode];
   const b = room.battleState;
+  b.lastDamage = null;
   
   const attackerPlayer = room.players[b.attackerId];
   const defenderPlayer = room.players[b.defenderId];
@@ -367,6 +376,8 @@ function resolveTurn(roomCode) {
   }
 
   let dmg = Math.max(5, Math.floor(rawAtk - (rawDef / 3)));
+  b.lastDamage = { targetId: b.defenderId, amount: dmg };
+  
   let log = `${atkPoke.name} attaque et inflige ${dmg} dégâts à ${defPoke.name} !`;
 
   defPoke.hp -= dmg;
@@ -441,4 +452,4 @@ function sendBattleUpdateToSocket(socketId, roomCode, logMsg) {
   });
 }
 
-server.listen(process.env.PORT || 3000, () => console.log('Serveur PokeAuc V9 actif !'));
+server.listen(process.env.PORT || 3000, () => console.log('Serveur PokeAuc V10 actif !'));
