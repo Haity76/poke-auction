@@ -1,7 +1,7 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const axios = require('axios'); // <-- Indispensable pour récupérer tout le Pokédex !
+const axios = require('axios');
 
 const app = express();
 const server = http.createServer(app);
@@ -11,15 +11,13 @@ app.use(express.static('public'));
 
 const rooms = {};
 
-// Dictionnaire pour traduire les couleurs officielles en français
 const colorTranslations = {
   black: 'Noir', blue: 'Bleu', brown: 'Brun / Marron', gray: 'Gris',
   green: 'Vert', pink: 'Rose', purple: 'Violet', red: 'Rouge', white: 'Blanc', yellow: 'Jaune'
 };
 
-// Nouvelle fonction pour piocher un Pokémon au hasard parmi les 1025 !
 async function getRandomPokemon() {
-  const id = Math.floor(Math.random() * 1025) + 1; // Jusqu'à la 9G
+  const id = Math.floor(Math.random() * 1025) + 1;
   try {
     const pokeRes = await axios.get(`https://pokeapi.co/api/v2/pokemon/${id}`);
     const speciesRes = await axios.get(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
@@ -28,7 +26,7 @@ async function getRandomPokemon() {
     const colorRaw = speciesRes.data.color.name;
 
     return {
-      id: id,
+      id,
       name: nameFr,
       color: colorTranslations[colorRaw] || colorRaw,
       hp: pokeRes.data.stats[0].base_stat,
@@ -39,10 +37,10 @@ async function getRandomPokemon() {
       spDef: pokeRes.data.stats[4].base_stat,
       speed: pokeRes.data.stats[5].base_stat,
       sprite: pokeRes.data.sprites.front_default || pokeRes.data.sprites.other['official-artwork'].front_default,
-      spriteBack: pokeRes.data.sprites.back_default || pokeRes.data.sprites.front_default // Si pas de dos dispo, met la face
+      spriteBack: pokeRes.data.sprites.back_default || pokeRes.data.sprites.front_default
     };
   } catch (err) {
-    console.error("Erreur de récupération API :", err.message);
+    console.error("Erreur PokéAPI :", err.message);
     return null;
   }
 }
@@ -131,14 +129,14 @@ io.on('connection', (socket) => {
     if (!room || room.state !== 'AUCTION' || !room.currentAuction) return;
 
     const player = room.players[socket.id];
-    if (!player || player.role !== 'player') return;
+    if (!player || player.role !== 'player' || player.team.length >= 3) return;
 
     const newBid = room.currentAuction.highestBid + 50;
     if (player.budget >= newBid) {
       room.currentAuction.highestBid = newBid;
       room.currentAuction.highestBidder = socket.id;
       room.currentAuction.highestBidderName = player.name;
-      room.currentAuction.timeLeft = 10; // Remet à 10s
+      room.currentAuction.timeLeft = 10;
 
       io.to(currentRoom).emit('bidUpdated', {
         highestBid: room.currentAuction.highestBid,
@@ -190,22 +188,20 @@ io.on('connection', (socket) => {
   });
 });
 
-// Le "async" est ajouté pour pouvoir attendre la réponse de la PokéAPI
 async function startNextAuction(roomCode) {
   const room = rooms[roomCode];
   if (!room) return;
 
   room.state = 'AUCTION';
-  
-  let poke = await getRandomPokemon();
+  const poke = await getRandomPokemon();
+
   if (!poke) {
-    // Si l'API bug un instant, on relance dans 1s
     setTimeout(() => startNextAuction(roomCode), 1000);
     return;
   }
 
   let hintText = '';
-  if (room.chosenMode === 'shiny') hintText = `Couleur : ${poke.color}`;
+  if (room.chosenMode === 'shiny') hintText = `Couleur Forme Shiny : ${poke.color}`;
   else if (room.chosenMode === 'pokedex') hintText = `Pokédex N° : #${poke.id}`;
   else hintText = 'Masqué (Aucun indice)';
 
@@ -252,14 +248,43 @@ function endAuction(roomCode) {
     pokemon: room.currentAuction.pokemon.name
   });
 
-  const players = Object.values(room.players).filter(p => p.role === 'player');
-  // Les joueurs doivent avoir chacun 3 Pokémon pour combattre (modifiable)
-  const ready = players.every(p => p.team.length >= 3); 
+  checkAndFillTeams(roomCode);
+}
 
-  // Pour la démo ou les tests rapides, on peut mettre >= 1. 
-  // J'ai remis à 3 pour avoir de vraies équipes !
-  if (ready) {
+async function checkAndFillTeams(roomCode) {
+  const room = rooms[roomCode];
+  if (!room) return;
+
+  const players = Object.values(room.players).filter(p => p.role === 'player');
+  const p1 = players[0];
+  const p2 = players[1];
+
+  if (p1.team.length >= 3 && p2.team.length >= 3) {
     setTimeout(() => startBattle(roomCode), 2000);
+    return;
+  }
+
+  let needsAutoFill = null;
+  if (p1.team.length >= 3 && p2.team.length < 3) {
+    needsAutoFill = p2;
+  } else if (p2.team.length >= 3 && p1.team.length < 3) {
+    needsAutoFill = p1;
+  } else if (p1.budget < 50 && p2.budget < 50) {
+    if (p1.team.length < 3) needsAutoFill = p1;
+    else if (p2.team.length < 3) needsAutoFill = p2;
+  }
+
+  if (needsAutoFill) {
+    const poke = await getRandomPokemon();
+    if (poke) {
+      needsAutoFill.team.push(poke);
+      io.to(roomCode).emit('auctionEnded', {
+        players: room.players,
+        winnerName: "Le Système",
+        pokemon: `${poke.name} (Attribué à ${needsAutoFill.name})`
+      });
+    }
+    setTimeout(() => checkAndFillTeams(roomCode), 1500);
   } else {
     setTimeout(() => startNextAuction(roomCode), 2000);
   }
@@ -273,7 +298,6 @@ function startBattle(roomCode) {
   const p1 = players[0];
   const p2 = players[1];
 
-  // Sélectionne le dernier Pokémon capturé par chaque joueur
   const poke1 = { ...p1.team[p1.team.length - 1] };
   const poke2 = { ...p2.team[p2.team.length - 1] };
 
@@ -308,7 +332,6 @@ function resolveTurn(roomCode) {
     room.state = 'GAME_OVER';
     log = `${attacker.name} remporte la victoire !`;
   } else {
-    // Changement de tour
     const temp = b.attackerId;
     b.attackerId = b.defenderId;
     b.defenderId = temp;
@@ -330,4 +353,4 @@ function sendBattleUpdate(roomCode, logMsg) {
 }
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Serveur V6 actif sur le port ${PORT}`));
+server.listen(PORT, () => console.log(`Serveur V7 actif sur http://localhost:${PORT}`));

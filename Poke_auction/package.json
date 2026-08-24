@@ -1,7 +1,7 @@
 {
-  "name": "poke-auction-v6",
-  "version": "6.0.0",
-  "description": "Jeu d'enchères et de combats Pokémon V6",
+  "name": "poke-auction-v7",
+  "version": "7.0.0",
+  "description": "Jeu d'enchères et combats Pokémon V7 avec avatars et auto-fill",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

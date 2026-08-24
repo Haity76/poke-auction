@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>PokéAuction V6 - Combat Dynamique & Thèmes</title>
+  <title>PokéAuction V7 - PokéBalls & Auto-Fill</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     body.theme-zekrom { --bg: #0b0f19; --panel: #151d30; --accent: #00d2ff; --text: #ffffff; --border: #1e293b; --btn-bg: #00d2ff; --btn-text: #000; }
@@ -21,7 +21,7 @@
 
     .team-panel { width: 280px; background: var(--panel); border-right: 1px solid var(--border); border-left: 1px solid var(--border); padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; }
     .profile-header { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--accent); padding-bottom: 10px; }
-    .profile-header img { width: 45px; height: 45px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); }
+    .profile-header img { width: 45px; height: 45px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); object-fit: contain; }
 
     .poke-card-slot { display: flex; align-items: center; gap: 10px; background: var(--bg); padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); }
     .poke-card-slot img { width: 40px; height: 40px; }
@@ -29,20 +29,22 @@
     .center-content { flex: 1; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; width: 100%; max-width: 580px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
 
+    .avatar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
+    .avatar-option { width: 50px; height: 50px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; background: var(--bg); padding: 4px; object-fit: contain; margin: auto; }
+    .avatar-option.selected { border-color: var(--accent); transform: scale(1.1); }
+
     .btn { background: var(--btn-bg); color: var(--btn-text); font-weight: bold; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-size: 0.95em; margin: 4px; }
     input { padding: 8px; border-radius: 6px; border: 1px solid var(--border); text-align: center; }
 
-    /* SCÈNE DE COMBAT DYNAMIQUE 2.5D */
+    /* COMBAT 2.5D */
     .battle-scene { position: relative; width: 100%; height: 260px; background: linear-gradient(180deg, #334155 0%, #0f172a 100%); border-radius: 12px; border: 2px solid var(--border); overflow: hidden; margin-bottom: 15px; }
-
-    /* POSITIONS : Premier Plan (Attaquant) / Second Plan (Défenseur) */
     .slot-foreground { position: absolute; bottom: 20px; left: 40px; width: 180px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 50%; transform: scaleY(0.5); transition: all 0.5s ease; }
     .sprite-foreground { position: absolute; bottom: 25px; left: 70px; height: 120px; z-index: 3; transition: all 0.5s ease; }
-    .hud-foreground { position: absolute; bottom: 15px; right: 15px; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 8px; width: 180px; text-align: left; transition: all 0.5s ease; }
+    .hud-foreground { position: absolute; bottom: 15px; right: 15px; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 8px; width: 180px; text-align: left; }
 
     .slot-background { position: absolute; top: 50px; right: 40px; width: 140px; height: 40px; background: rgba(255,255,255,0.15); border-radius: 50%; transform: scaleY(0.5); transition: all 0.5s ease; }
     .sprite-background { position: absolute; top: 10px; right: 65px; height: 90px; z-index: 2; transition: all 0.5s ease; }
-    .hud-background { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 8px; width: 180px; text-align: left; transition: all 0.5s ease; }
+    .hud-background { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 8px; width: 180px; text-align: left; }
 
     .hp-bar-bg { background: #334155; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 4px; }
     .hp-bar-fill { height: 100%; width: 100%; background: #22c55e; transition: width 0.4s ease; }
@@ -58,12 +60,12 @@
 <body class="theme-zekrom">
 
   <header>
-    <h1>PokéAuction V6</h1>
+    <h1>PokéAuction V7</h1>
     <div id="roomBadge" style="font-size: 0.85em; opacity: 0.8;">Hors ligne</div>
   </header>
 
   <div class="main-layout">
-    <!-- PANEL GAUCHE (LE JOUEUR LOCAL) -->
+    <!-- PANEL GAUCHE (JOUEUR LOCAL) -->
     <div class="team-panel">
       <div class="profile-header">
         <img id="myAvatar" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
@@ -78,16 +80,29 @@
     <!-- ZONE CENTRALE -->
     <div class="center-content">
       
-      <!-- LOBBY -->
+      <!-- LOBBY & SÉLECTION AVATAR POKÉBALLS -->
       <div id="lobbyZone" class="card">
-        <h2>Bienvenue sur PokéAuction</h2>
+        <h2>Création de votre Dresseur</h2>
         <input type="text" id="usernameInput" placeholder="Entrez votre Pseudo" value="Dresseur">
-        <div style="margin: 15px 0;">
+        
+        <p style="margin-top: 10px; font-size: 0.9em;">Choisissez votre Poké Ball :</p>
+        <div class="avatar-grid">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="avatar-option selected" title="Poké Ball" onclick="selectAvatar(this)">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png" class="avatar-option" title="Super Ball" onclick="selectAvatar(this)">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png" class="avatar-option" title="Hyper Ball" onclick="selectAvatar(this)">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png" class="avatar-option" title="Master Ball" onclick="selectAvatar(this)">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/luxury-ball.png" class="avatar-option" title="Luxe Ball" onclick="selectAvatar(this)">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/timer-ball.png" class="avatar-option" title="Chrono Ball" onclick="selectAvatar(this)">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/premier-ball.png" class="avatar-option" title="Honor Ball" onclick="selectAvatar(this)">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dusk-ball.png" class="avatar-option" title="Sombre Ball" onclick="selectAvatar(this)">
+        </div>
+
+        <div style="margin: 10px 0;">
           <button class="btn" onclick="createRoom()">Créer un Salon</button>
         </div>
-        <hr style="border-color: var(--border); margin: 15px 0;">
+        <hr style="border-color: var(--border); margin: 10px 0;">
         <div>
-          <input type="text" id="roomCodeInput" placeholder="Code du salon (ex: PKM-1234)">
+          <input type="text" id="roomCodeInput" placeholder="Code (ex: PKM-1234)">
           <button class="btn" onclick="joinRoom()">Rejoindre Salon</button>
         </div>
       </div>
@@ -104,7 +119,7 @@
         <h2>Vote du Mode d'Enchère</h2>
         <p>Sélectionnez le type d'indice pour la partie :</p>
         <button class="btn" onclick="vote('shiny')">Couleurs Shiny</button>
-        <button class="btn" onclick="vote('pokedex')">N° Pokédex (Avec sous-évolutions)</button>
+        <button class="btn" onclick="vote('pokedex')">N° Pokédex</button>
         <button class="btn" onclick="vote('masque')">Masqué (Sans Indice)</button>
         <p id="voteStatus" style="margin-top: 15px; color: var(--accent); font-weight: bold;"></p>
       </div>
@@ -121,7 +136,6 @@
       <!-- COMBAT PERMUTATION DYNAMIQUE -->
       <div id="battleZone" class="card hidden">
         <div class="battle-scene">
-          <!-- Second Plan (Défenseur) -->
           <div class="hud-background">
             <strong id="bgPokeName">Défenseur</strong>
             <div id="bgHpText" style="font-size: 0.75em;">100/100 PV</div>
@@ -130,7 +144,6 @@
           <div class="slot-background"></div>
           <img id="bgSprite" class="sprite-background" src="">
 
-          <!-- Premier Plan (Attaquant) -->
           <div class="slot-foreground"></div>
           <img id="fgSprite" class="sprite-foreground" src="">
           <div class="hud-foreground">
@@ -142,7 +155,6 @@
 
         <div id="battleLog" class="battle-log">Préparation au combat...</div>
 
-        <!-- CONTRÔLES DYNAMIQUES (ATTAQUE OU DÉFENSE) -->
         <div id="battleActionControls">
           <div id="attackControls" class="hidden">
             <button class="btn" onclick="sendAction('physique')">Attaque Physique</button>
@@ -154,7 +166,6 @@
           </div>
         </div>
 
-        <!-- REVANCHE -->
         <div id="rematchZone" class="hidden" style="margin-top: 10px;">
           <button class="btn" onclick="requestRematch()">Revanche (<span id="rematchCount">0</span>/2)</button>
         </div>
@@ -165,7 +176,7 @@
     <!-- PANEL DROITE (ADVERSAIRE) -->
     <div class="team-panel">
       <div class="profile-header">
-        <img id="opponentAvatar" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png">
+        <img id="opponentAvatar" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png">
         <div>
           <strong id="opponentName">En attente...</strong>
           <div id="opponentBudget" style="font-size: 0.9em; color: var(--accent);">Solde: 900 🪙</div>
@@ -190,21 +201,27 @@
     const socket = io();
     let mySocketId = null;
     let myRole = 'spectator';
-    const avatarDefault = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png";
+    let selectedAvatarUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png";
 
     socket.on('connect', () => { mySocketId = socket.id; });
 
     function setTheme(t) { document.body.className = t; }
 
+    function selectAvatar(el) {
+      document.querySelectorAll('.avatar-option').forEach(img => img.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedAvatarUrl = el.src;
+    }
+
     function createRoom() {
       const name = document.getElementById('usernameInput').value || 'Dresseur';
-      socket.emit('createRoom', { name, avatar: avatarDefault });
+      socket.emit('createRoom', { name, avatar: selectedAvatarUrl });
     }
 
     function joinRoom() {
       const name = document.getElementById('usernameInput').value || 'Dresseur';
       const roomCode = document.getElementById('roomCodeInput').value.trim();
-      if (roomCode) socket.emit('joinRoom', { roomCode, name, avatar: avatarDefault });
+      if (roomCode) socket.emit('joinRoom', { roomCode, name, avatar: selectedAvatarUrl });
     }
 
     socket.on('roomCreated', (data) => {
@@ -256,7 +273,6 @@
       if (data.players) renderTeams(data.players);
     });
 
-    /* COMBAT & PERMUTATION DYNAMIQUE ATTAQUE / DÉFENSE */
     socket.on('battleUpdate', (data) => {
       document.getElementById('auctionZone').classList.add('hidden');
       document.getElementById('battleZone').classList.remove('hidden');
@@ -267,19 +283,16 @@
       const attacker = (b.attackerId === b.p1.id) ? b.p1 : b.p2;
       const defender = (b.defenderId === b.p1.id) ? b.p1 : b.p2;
 
-      // Premier plan : Attaquant (De dos)
       document.getElementById('fgPokeName').innerText = `${attacker.poke.name} (${attacker.name})`;
       document.getElementById('fgSprite').src = attacker.poke.spriteBack;
       updateHp('fg', attacker.poke.hp, attacker.poke.hpMax);
 
-      // Second plan : Défenseur (De face)
       document.getElementById('bgPokeName').innerText = `${defender.poke.name} (${defender.name})`;
       document.getElementById('bgSprite').src = defender.poke.sprite;
       updateHp('bg', defender.poke.hp, defender.poke.hpMax);
 
       document.getElementById('battleLog').innerText = data.log;
 
-      // Affichage des contrôles selon le rôle du tour
       if (myRole === 'player') {
         if (isAttacker) {
           document.getElementById('attackControls').classList.remove('hidden');
@@ -311,6 +324,7 @@
       const me = players[myKey];
       if (me) {
         document.getElementById('myName').innerText = me.name + " (Moi)";
+        document.getElementById('myAvatar').src = me.avatar;
         document.getElementById('myBudget').innerText = `Solde: ${me.budget} 🪙`;
         document.getElementById('myTeam').innerHTML = me.team.map(p => `
           <div class="poke-card-slot"><img src="${p.sprite}"/><strong>${p.name}</strong></div>
@@ -320,6 +334,7 @@
       if (oppKey && players[oppKey]) {
         const opp = players[oppKey];
         document.getElementById('opponentName').innerText = opp.name;
+        document.getElementById('opponentAvatar').src = opp.avatar;
         document.getElementById('opponentBudget').innerText = `Solde: ${opp.budget} 🪙`;
         document.getElementById('opponentTeam').innerHTML = opp.team.map(p => `
           <div class="poke-card-slot"><img src="${p.sprite}"/><strong>${p.name}</strong></div>
