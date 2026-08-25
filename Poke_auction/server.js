@@ -54,12 +54,8 @@ async function getRandomPokemon() {
       spriteBack: pokeRes.data.sprites.back_default || pokeRes.data.sprites.front_default,
       item: null
     };
-  } catch (err) {
-    return null;
-  }
+  } catch (err) { return null; }
 }
-
-function generateRoomCode() { return 'PKM-' + Math.floor(1000 + Math.random() * 9000); }
 
 function getShopItems() {
   const items = [];
@@ -78,10 +74,18 @@ io.on('connection', (socket) => {
   let currentRoom = null;
 
   socket.on('createRoom', (userData) => {
-    const roomCode = generateRoomCode();
+    const gameType = userData.gameType || 'pokeauc';
+    let prefix = gameType === 'guess' ? 'GUE-' : gameType === 'imposteur' ? 'IMP-' : 'PKM-';
+    const roomCode = prefix + Math.floor(1000 + Math.random() * 9000);
+    
     currentRoom = roomCode;
     socket.join(roomCode);
-    rooms[roomCode] = { code: roomCode, players: {}, host: socket.id, state: 'LOBBY', votes: {}, chosenMode: 'shiny', currentAuction: null, auctionTimer: null, battleState: null, rematchVotes: new Set(), shopItems: [], disconnectTimeout: null };
+    
+    rooms[roomCode] = { 
+      code: roomCode, gameType: gameType, players: {}, host: socket.id, state: 'LOBBY', 
+      votes: {}, chosenMode: 'shiny', currentAuction: null, auctionTimer: null, 
+      battleState: null, rematchVotes: new Set(), shopItems: [], disconnectTimeout: null 
+    };
     rooms[roomCode].players[socket.id] = { id: socket.id, name: userData.name, avatar: userData.avatar, budget: 900, team: [], role: 'player', connected: true, ready: false };
     socket.emit('roomCreated', { roomCode, role: 'player' });
   });
@@ -173,10 +177,12 @@ io.on('connection', (socket) => {
     const itemDef = SHOP_ITEMS.find(i => i.id === itemId);
     const poke = player.team[pokeIndex];
     if (!itemDef || !poke || player.budget < itemDef.price) return;
+    
     if (itemDef.type === 'heal' && poke.hp > 0) poke.hp = Math.min(poke.hpMax, poke.hp + itemDef.value);
     else if (itemDef.type === 'revive' && poke.hp === 0) poke.hp = Math.floor(poke.hpMax * itemDef.value);
     else if (itemDef.type === 'held') poke.item = itemDef;
     else return;
+    
     player.budget -= itemDef.price;
     io.to(currentRoom).emit('shopUpdate', { players: room.players });
   });
@@ -337,10 +343,8 @@ function startBattle(roomCode) {
   room.battleState = { 
     arena: ARENA_TYPES[Math.floor(Math.random() * ARENA_TYPES.length)],
     lastDamage: null,
-    p1: { id: p1.id, name: p1.name }, 
-    p2: { id: p2.id, name: p2.name }, 
-    p1ActiveIndex: 0, p2ActiveIndex: 0, 
-    attackerId: p1.id, defenderId: p2.id, 
+    p1: { id: p1.id, name: p1.name }, p2: { id: p2.id, name: p2.name }, 
+    p1ActiveIndex: 0, p2ActiveIndex: 0, attackerId: p1.id, defenderId: p2.id, 
     attackerAction: null, defenderAction: null 
   };
   sendBattleUpdate(roomCode, `L'arène est sélectionnée. Le combat commence ! ${p1.name} attaque en premier.`);
@@ -361,7 +365,7 @@ function resolveTurn(roomCode) {
 
   if (defPoke.item && defPoke.item.id === 'poudre' && Math.random() < 0.15) {
     b.attackerAction = null; b.defenderAction = null;
-    return sendBattleUpdate(roomCode, `${defPoke.name} esquive l'attaque grâce à Poudre Claire ! (Changement de tour)`);
+    return sendBattleUpdate(roomCode, `${defPoke.name} esquive l'attaque grâce à Poudre Claire !`);
   }
 
   let rawAtk = b.attackerAction === 'special' ? atkPoke.spAtk : atkPoke.attack;
@@ -377,7 +381,6 @@ function resolveTurn(roomCode) {
 
   let dmg = Math.max(5, Math.floor(rawAtk - (rawDef / 3)));
   b.lastDamage = { targetId: b.defenderId, amount: dmg };
-  
   let log = `${atkPoke.name} attaque et inflige ${dmg} dégâts à ${defPoke.name} !`;
 
   defPoke.hp -= dmg;
@@ -392,7 +395,7 @@ function resolveTurn(roomCode) {
   if (atkPoke.item && atkPoke.item.id === 'grelot') {
     const heal = Math.floor(dmg * 0.2);
     atkPoke.hp = Math.min(atkPoke.hpMax, atkPoke.hp + heal);
-    log += ` Le Grelot Coque soigne ${heal} PV.`;
+    log += ` Grelot Coque soigne ${heal} PV.`;
   }
   if (defPoke.item && defPoke.item.id === 'casque' && b.attackerAction === 'physique' && defPoke.hp > 0) {
     atkPoke.hp = Math.max(0, atkPoke.hp - 15);
@@ -405,7 +408,7 @@ function resolveTurn(roomCode) {
 
   let forceSwitchId = null;
   if (defPoke.hp > 0 && defPoke.item && defPoke.item.id === 'fuite') { defPoke.item = null; forceSwitchId = b.defenderId; log += ` Bouton Fuite activé !`; } 
-  else if (defPoke.hp > 0 && atkPoke.item && atkPoke.item.id === 'cartouche') { atkPoke.item = null; forceSwitchId = b.defenderId; log += ` Cartouche Rouge force l'adversaire à changer !`; }
+  else if (defPoke.hp > 0 && atkPoke.item && atkPoke.item.id === 'cartouche') { atkPoke.item = null; forceSwitchId = b.defenderId; log += ` Cartouche Rouge activée !`; }
 
   const nextAtkIdx = getFirstAliveIndex(attackerPlayer.team);
   const nextDefIdx = forceSwitchId === b.defenderId ? getFirstAliveIndex(defenderPlayer.team.filter((p,i)=> i!==defenderActiveIdx && p.hp>0)) : getFirstAliveIndex(defenderPlayer.team);
@@ -432,11 +435,8 @@ function sendBattleUpdate(roomCode, logMsg) {
   const room = rooms[roomCode];
   const b = room.battleState;
   io.to(roomCode).emit('battleUpdate', {
-    battle: b,
-    p1Team: room.players[b.p1.id].team,
-    p2Team: room.players[b.p2.id].team,
-    log: logMsg,
-    gameState: room.state
+    battle: b, p1Team: room.players[b.p1.id].team, p2Team: room.players[b.p2.id].team,
+    log: logMsg, gameState: room.state
   });
 }
 
@@ -444,11 +444,8 @@ function sendBattleUpdateToSocket(socketId, roomCode, logMsg) {
   const room = rooms[roomCode];
   const b = room.battleState;
   io.to(socketId).emit('battleUpdate', {
-    battle: b,
-    p1Team: room.players[b.p1.id].team,
-    p2Team: room.players[b.p2.id].team,
-    log: logMsg,
-    gameState: room.state
+    battle: b, p1Team: room.players[b.p1.id].team, p2Team: room.players[b.p2.id].team,
+    log: logMsg, gameState: room.state
   });
 }
 
