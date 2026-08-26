@@ -85,7 +85,23 @@
     input { padding: 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3); color: var(--text); text-align: center; margin: 5px; width: 85%; max-width: 280px; font-size: 1em; font-family: var(--font-main); }
     input:focus { outline: none; border-color: var(--accent); box-shadow: var(--glow); }
 
-    .avatar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
+    
+    .avatar-grid { 
+      display: flex; 
+      flex-wrap: wrap; 
+      justify-content: center; 
+      gap: 10px; 
+      margin: 15px 0; 
+      max-height: 160px; /* Limite la hauteur */
+      overflow-y: auto; /* Ajoute un scroll si besoin */
+      padding: 5px;
+      border: 1px inset var(--glass-border);
+      border-radius: 12px;
+      background: rgba(0,0,0,0.2);
+    }
+    /* Style de la barre de défilement pour la grille */
+    .avatar-grid::-webkit-scrollbar { width: 6px; }
+    .avatar-grid::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
     .avatar-option { width: 55px; height: 55px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; padding: 2px; margin: auto; object-fit: cover; transition: all 0.2s; }
     .avatar-option.selected { border-color: var(--accent); transform: scale(1.1); box-shadow: var(--glow); }
 
@@ -198,25 +214,46 @@
         <div id="decoTimer" style="font-size: 4em; font-weight: bold; color: var(--accent); text-shadow: var(--glow);">20</div>
       </div>
 
-      <div id="lobbyZone" class="card glass-panel">
-        <h2>Entrez dans l'Arène</h2>
-        <input type="text" id="usernameInput" placeholder="Votre Pseudo" value="Dresseur">
-        <p style="margin: 15px 0 5px 0; font-size: 1.1em; font-weight: bold;">Choisissez votre Dresseur :</p>
-        <div class="avatar-grid">
+      <div class="avatar-grid">
+          <!-- GEN 1 : Kanto -->
           <img src="https://play.pokemonshowdown.com/sprites/trainers/red.png" class="avatar-option selected" title="Red" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/blue.png" class="avatar-option" title="Blue" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/leaf.png" class="avatar-option" title="Leaf" onclick="selectAvatar(this)">
+          
+          <!-- GEN 2 : Johto -->
           <img src="https://play.pokemonshowdown.com/sprites/trainers/ethan.png" class="avatar-option" title="Luth" onclick="selectAvatar(this)">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/lyra.png" class="avatar-option" title="Célesta" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/kris.png" class="avatar-option" title="Christy" onclick="selectAvatar(this)">
+          
+          <!-- GEN 3 : Hoenn -->
           <img src="https://play.pokemonshowdown.com/sprites/trainers/brendan.png" class="avatar-option" title="Brice" onclick="selectAvatar(this)">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/may.png" class="avatar-option" title="Flora" onclick="selectAvatar(this)">
+          
+          <!-- GEN 4 : Sinnoh -->
           <img src="https://play.pokemonshowdown.com/sprites/trainers/lucas.png" class="avatar-option" title="Louka" onclick="selectAvatar(this)">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/dawn.png" class="avatar-option" title="Aurore" onclick="selectAvatar(this)">
+          
+          <!-- GEN 5 : Unys -->
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/hilbert.png" class="avatar-option" title="Ludwig" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/hilda.png" class="avatar-option" title="Ludvina" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/nate.png" class="avatar-option" title="Mélis" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/rosa.png" class="avatar-option" title="Écho" onclick="selectAvatar(this)">
+          
+          <!-- GEN 6 : Kalos -->
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/calem.png" class="avatar-option" title="Kalem" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/serena.png" class="avatar-option" title="Serena" onclick="selectAvatar(this)">
+          
+          <!-- GEN 7 : Alola -->
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/elio.png" class="avatar-option" title="Elio" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/selene.png" class="avatar-option" title="Selene" onclick="selectAvatar(this)">
+          
+          <!-- GEN 8 : Galar -->
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/victor.png" class="avatar-option" title="Victor" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/gloria.png" class="avatar-option" title="Gloria" onclick="selectAvatar(this)">
+          
+          <!-- GEN 9 : Paldea -->
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/florian.png" class="avatar-option" title="Florian" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/juliana.png" class="avatar-option" title="Juliana" onclick="selectAvatar(this)">
         </div>
-        <button class="btn" onclick="createRoom()">Créer un Salon</button>
-        <hr style="border-color: var(--glass-border); margin: 15px 0;">
-        <input type="text" id="roomCodeInput" placeholder="Code (ex: PKM-1234)">
-        <button class="btn" onclick="joinRoom()">Rejoindre Salon</button>
-      </div>
 
       <div id="waitingZone" class="card glass-panel hidden">
         <h2 style="margin: 0 0 10px 0;">Salon : <span id="displayRoomCode" style="color: var(--accent);"></span></h2>
