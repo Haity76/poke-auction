@@ -214,9 +214,15 @@
         <div id="decoTimer" style="font-size: 4em; font-weight: bold; color: var(--accent); text-shadow: var(--glow);">20</div>
       </div>
 
-      <div class="avatar-grid">
+      <div id="lobbyZone" class="card glass-panel">
+        <h2>Entrez dans l'Arène</h2>
+        <input type="text" id="usernameInput" placeholder="Votre Pseudo" value="Dresseur">
+        <p style="margin: 15px 0 5px 0; font-size: 1.1em; font-weight: bold;">Choisissez votre Dresseur :</p>
+        
+        <div class="avatar-grid">
           <!-- GEN 1 : Kanto -->
           <img src="https://play.pokemonshowdown.com/sprites/trainers/red.png" class="avatar-option selected" title="Red" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/leaf.png" class="avatar-option" title="Leaf" onclick="selectAvatar(this)">
           
           <!-- GEN 2 : Johto -->
           <img src="https://play.pokemonshowdown.com/sprites/trainers/ethan.png" class="avatar-option" title="Luth" onclick="selectAvatar(this)">
@@ -249,7 +255,17 @@
           <img src="https://play.pokemonshowdown.com/sprites/trainers/victor.png" class="avatar-option" title="Victor" onclick="selectAvatar(this)">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/gloria.png" class="avatar-option" title="Gloria" onclick="selectAvatar(this)">
           
+          <!-- GEN 9 : Paldea -->
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/florian.png" class="avatar-option" title="Florian" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/juliana.png" class="avatar-option" title="Juliana" onclick="selectAvatar(this)">
         </div>
+
+        <button class="btn" onclick="createRoom()">Créer un Salon</button>
+        <hr style="border-color: var(--glass-border); margin: 15px 0;">
+        <input type="text" id="roomCodeInput" placeholder="Code (ex: PKM-1234)">
+        <button class="btn" onclick="joinRoom()">Rejoindre Salon</button>
+      </div>
+
 
       <div id="waitingZone" class="card glass-panel hidden">
         <h2 style="margin: 0 0 10px 0;">Salon : <span id="displayRoomCode" style="color: var(--accent);"></span></h2>
