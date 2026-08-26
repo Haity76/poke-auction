@@ -11,6 +11,10 @@ app.use(express.static('public'));
 
 const rooms = {};
 
+// ==========================================
+// DONNÉES GLOBALES & UTILITAIRES
+// ==========================================
+
 const SHOP_ITEMS = [
   { id: 'potion', name: 'Potion', type: 'heal', value: 50, price: 50, weight: 15, desc: 'Rend 50 PV à un Pokémon.' },
   { id: 'super_potion', name: 'Super Potion', type: 'heal', value: 100, price: 80, weight: 10, desc: 'Rend 100 PV à un Pokémon.' },
@@ -25,20 +29,37 @@ const SHOP_ITEMS = [
   { id: 'orbe', name: 'Orbe Vie', type: 'held', price: 180, weight: 3, desc: '+30% de dégâts, mais perd 10% de ses PV Max par coup.' },
   { id: 'grelot', name: 'Grelot Coque', type: 'held', price: 170, weight: 3, desc: 'Soigne 20% des dégâts infligés (Vol de Vie).' },
   { id: 'ceinture', name: 'Ceinture Force', type: 'held', price: 180, weight: 2, desc: 'Survit avec 1 PV à une attaque mortelle (1 usage).' },
-  { id: 'poudre', name: 'Poudre Claire', type: 'held', price: 160, weight: 1, desc: '15% de chances d\'esquiver totalement une attaque.' },
-  { id: 'cartouche', name: 'Cartouche Rouge', type: 'held', price: 250, weight: 1, desc: 'Force l\'adversaire à changer de Pokémon actif.' }
+  { id: 'poudre', name: 'Poudre Claire', type: 'held', price: 160, weight: 1, desc: "15% de chances d'esquiver totalement une attaque." },
+  { id: 'cartouche', name: 'Cartouche Rouge', type: 'held', price: 250, weight: 1, desc: "Force l'adversaire à changer de Pokémon actif." }
 ];
 
 const colorTranslations = { black: 'Noir', blue: 'Bleu', brown: 'Brun / Marron', gray: 'Gris', green: 'Vert', pink: 'Rose', purple: 'Violet', red: 'Rouge', white: 'Blanc', yellow: 'Jaune' };
 const ARENA_TYPES = ['stadium', 'forest', 'volcano', 'ocean'];
 
+function generateRoomCode(gameType) {
+  let prefix = gameType === 'guess' ? 'GUE-' : gameType === 'imposteur' ? 'IMP-' : 'PKM-';
+  return prefix + Math.floor(1000 + Math.random() * 9000);
+}
+
+function normalizeString(str) {
+  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
+// Fonction unifiée pour tous les mini-jeux
 async function getRandomPokemon() {
   const id = Math.floor(Math.random() * 1025) + 1;
   try {
     const pokeRes = await axios.get(`https://pokeapi.co/api/v2/pokemon/${id}`);
     const speciesRes = await axios.get(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
+    
     const nameFr = speciesRes.data.names.find(n => n.language.name === 'fr')?.name || pokeRes.data.name;
     const colorRaw = speciesRes.data.color.name;
+    const colorFr = colorTranslations[colorRaw] || colorRaw;
+    
+    // Données pour L'Imposteur
+    const types = pokeRes.data.types.map(t => t.type.name).join(' / ');
+    
+    // Données pour PokeAuc
     const stats = pokeRes.data.stats.map(s => s.base_stat);
     const bst = stats.reduce((a, b) => a + b, 0);
     
@@ -48,7 +69,8 @@ async function getRandomPokemon() {
     else if (bst >= 400) rarity = 'Rare';
 
     return {
-      id, name: nameFr, color: colorTranslations[colorRaw] || colorRaw, rarity,
+      id, name: nameFr, color: colorFr, rarity, types,
+      height: pokeRes.data.height, weight: pokeRes.data.weight,
       hp: stats[0], hpMax: stats[0], attack: stats[1], def: stats[2], spAtk: stats[3], spDef: stats[4], speed: stats[5],
       sprite: pokeRes.data.sprites.front_default || pokeRes.data.sprites.other['official-artwork'].front_default,
       spriteBack: pokeRes.data.sprites.back_default || pokeRes.data.sprites.front_default,
@@ -70,23 +92,31 @@ function getShopItems() {
   return items;
 }
 
+// ==========================================
+// GESTION DES CONNEXIONS SOCKETS
+// ==========================================
+
 io.on('connection', (socket) => {
   let currentRoom = null;
 
   socket.on('createRoom', (userData) => {
     const gameType = userData.gameType || 'pokeauc';
-    let prefix = gameType === 'guess' ? 'GUE-' : gameType === 'imposteur' ? 'IMP-' : 'PKM-';
-    const roomCode = prefix + Math.floor(1000 + Math.random() * 9000);
-    
+    const roomCode = generateRoomCode(gameType);
     currentRoom = roomCode;
     socket.join(roomCode);
     
     rooms[roomCode] = { 
-      code: roomCode, gameType: gameType, players: {}, host: socket.id, state: 'LOBBY', 
-      votes: {}, chosenMode: 'shiny', currentAuction: null, auctionTimer: null, 
-      battleState: null, rematchVotes: new Set(), shopItems: [], disconnectTimeout: null 
+      code: roomCode, gameType: gameType, players: {}, host: socket.id, state: 'LOBBY', disconnectTimeout: null,
+      
+      // --- ÉTAT POKEAUC ---
+      votes: {}, chosenMode: 'shiny', currentAuction: null, auctionTimer: null, battleState: null, rematchVotes: new Set(), shopItems: [],
+      
+      // --- ÉTAT L'IMPOSTEUR ---
+      impSettings: { maxRounds: 1, wordsPerPlayer: 1 },
+      impState: { round: 0, turnOrder: [], currentTurnIdx: 0, currentWordLap: 0, secretPoke: null, imposteurId: null, wordsLog: [], timer: null, timeLeft: 0, votes: {} }
     };
-    rooms[roomCode].players[socket.id] = { id: socket.id, name: userData.name, avatar: userData.avatar, budget: 900, team: [], role: 'player', connected: true, ready: false };
+    
+    rooms[roomCode].players[socket.id] = { id: socket.id, name: userData.name, avatar: userData.avatar, role: 'player', connected: true, ready: false, budget: 900, team: [], score: 0 };
     socket.emit('roomCreated', { roomCode, role: 'player' });
   });
 
@@ -94,6 +124,7 @@ io.on('connection', (socket) => {
     const room = rooms[roomCode];
     if (!room) return socket.emit('errorMsg', 'Code de salon invalide.');
 
+    // --- GESTION RECONNEXION ---
     const disconnectedPlayer = Object.values(room.players).find(p => p.name === name && !p.connected);
     if (disconnectedPlayer) {
       clearTimeout(room.disconnectTimeout);
@@ -106,6 +137,8 @@ io.on('connection', (socket) => {
       socket.join(roomCode);
       
       if (room.host === oldId) room.host = socket.id;
+      
+      // Mise à jour des références PokeAuc
       if (room.currentAuction && room.currentAuction.highestBidder === oldId) room.currentAuction.highestBidder = socket.id;
       if (room.battleState) {
         if (room.battleState.p1.id === oldId) room.battleState.p1.id = socket.id;
@@ -114,39 +147,89 @@ io.on('connection', (socket) => {
         if (room.battleState.defenderId === oldId) room.battleState.defenderId = socket.id;
       }
       
-      io.to(roomCode).emit('playerReconnected', { name });
-      socket.emit('roomJoined', { roomCode, role: room.players[socket.id].role });
+      // Mise à jour des références Imposteur
+      if (room.impState.imposteurId === oldId) room.impState.imposteurId = socket.id;
+      const idx = room.impState.turnOrder.indexOf(oldId);
+      if (idx !== -1) room.impState.turnOrder[idx] = socket.id;
       
-      if(room.state === 'SHOP') socket.emit('enterShop', { shopItems: room.shopItems, players: room.players });
-      else if(room.state === 'BATTLE') sendBattleUpdateToSocket(socket.id, roomCode, "Combat repris !");
+      io.to(roomCode).emit('playerReconnected', { name });
+      socket.emit('roomJoined', { roomCode, role: room.players[socket.id].role, gameType: room.gameType });
+      
+      if (room.gameType === 'pokeauc') {
+        if(room.state === 'SHOP') socket.emit('enterShop', { shopItems: room.shopItems, players: room.players });
+        else if(room.state === 'BATTLE') sendBattleUpdateToSocket(socket.id, roomCode, "Combat repris !");
+      } else if (room.gameType === 'imposteur') {
+        io.to(roomCode).emit('lobbyUpdate', { players: room.players, host: room.host });
+      }
       return;
     }
 
     currentRoom = roomCode;
     socket.join(roomCode);
     const activePlayers = Object.values(room.players).filter(p => p.role === 'player').length;
-    const role = activePlayers < 2 ? 'player' : 'spectator';
+    const role = (room.gameType === 'pokeauc' && activePlayers >= 2) ? 'spectator' : 'player';
     
-    room.players[socket.id] = { id: socket.id, name, avatar, budget: 900, team: [], role, connected: true, ready: false };
-    socket.emit('roomJoined', { roomCode, role });
+    room.players[socket.id] = { id: socket.id, name, avatar, role, connected: true, ready: false, budget: 900, team: [], score: 0 };
+    socket.emit('roomJoined', { roomCode, role, gameType: room.gameType });
     
-    if (role === 'player' && activePlayers + 1 === 2 && room.state === 'LOBBY') {
-      room.state = 'VOTING';
-      io.to(roomCode).emit('startVotingPhase', { players: room.players });
-    } else if (role === 'spectator') {
-      if (room.state === 'VOTING') socket.emit('startVotingPhase', { players: room.players });
-      else if (room.state === 'AUCTION') {
-         socket.emit('newAuction', { hint: room.currentAuction?.hint, rarity: room.currentAuction?.pokemon?.rarity, players: room.players });
-         if (room.currentAuction) socket.emit('bidUpdated', { highestBid: room.currentAuction.highestBid, highestBidderName: room.currentAuction.highestBidderName, timeLeft: room.currentAuction.timeLeft });
+    if (room.gameType === 'pokeauc') {
+      if (role === 'player' && activePlayers + 1 === 2 && room.state === 'LOBBY') {
+        room.state = 'VOTING';
+        io.to(roomCode).emit('startVotingPhase', { players: room.players });
+      } else if (role === 'spectator') {
+        if (room.state === 'VOTING') socket.emit('startVotingPhase', { players: room.players });
+        else if (room.state === 'AUCTION') {
+           socket.emit('newAuction', { hint: room.currentAuction?.hint, rarity: room.currentAuction?.pokemon?.rarity, players: room.players });
+           if (room.currentAuction) socket.emit('bidUpdated', { highestBid: room.currentAuction.highestBid, highestBidderName: room.currentAuction.highestBidderName, timeLeft: room.currentAuction.timeLeft });
+        }
+        else if (room.state === 'SHOP') socket.emit('enterShop', { shopItems: room.shopItems, players: room.players });
+        else if (room.state === 'BATTLE' || room.state === 'GAME_OVER') sendBattleUpdateToSocket(socket.id, roomCode, "Vous observez le combat.");
       }
-      else if (room.state === 'SHOP') socket.emit('enterShop', { shopItems: room.shopItems, players: room.players });
-      else if (room.state === 'BATTLE' || room.state === 'GAME_OVER') sendBattleUpdateToSocket(socket.id, roomCode, "Vous observez le combat.");
+    } else if (room.gameType === 'imposteur') {
+      io.to(roomCode).emit('lobbyUpdate', { players: room.players, host: room.host });
     }
   });
 
+  socket.on('leaveRoom', () => {
+    if(currentRoom && rooms[currentRoom]) {
+      if (rooms[currentRoom].players[socket.id] && rooms[currentRoom].players[socket.id].role === 'player') {
+        io.to(currentRoom).emit('errorMsg', "Un joueur a quitté le salon.");
+        delete rooms[currentRoom];
+      }
+      socket.leave(currentRoom);
+      currentRoom = null;
+    }
+  });
+
+  socket.on('disconnect', () => {
+    if (currentRoom && rooms[currentRoom]) {
+      const room = rooms[currentRoom];
+      if (room.players[socket.id]) {
+        const isPlayer = room.players[socket.id].role === 'player';
+        room.players[socket.id].connected = false;
+        
+        if (isPlayer) {
+          io.to(currentRoom).emit('playerDisconnectedCount', { time: 20 });
+          room.disconnectTimeout = setTimeout(() => {
+            io.to(currentRoom).emit('errorMsg', "Un joueur s'est déconnecté définitivement.");
+            delete rooms[currentRoom];
+          }, 20000);
+        } else {
+          delete room.players[socket.id];
+          if (room.gameType === 'pokeauc') io.to(currentRoom).emit('shopUpdate', { players: room.players });
+          else if (room.gameType === 'imposteur') io.to(currentRoom).emit('lobbyUpdate', { players: room.players, host: room.host });
+        }
+      }
+    }
+  });
+
+  // ==========================================
+  // JEU 1 : POKEAUC (ENCHÈRES ET COMBATS)
+  // ==========================================
+
   socket.on('voteMode', (mode) => {
     const room = rooms[currentRoom];
-    if (!room || room.state !== 'VOTING') return;
+    if (!room || room.state !== 'VOTING' || room.gameType !== 'pokeauc') return;
     room.votes[socket.id] = mode;
     if (Object.keys(room.votes).length === 2) {
       const v = Object.values(room.votes);
@@ -230,37 +313,79 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('leaveRoom', () => {
-    if(currentRoom && rooms[currentRoom]) {
-      if (rooms[currentRoom].players[socket.id] && rooms[currentRoom].players[socket.id].role === 'player') {
-        io.to(currentRoom).emit('errorMsg', "L'adversaire a quitté le salon.");
-        delete rooms[currentRoom];
-      }
-      socket.leave(currentRoom);
-      currentRoom = null;
+  // ==========================================
+  // JEU 2 : L'IMPOSTEUR (BLUFF & ENQUÊTE)
+  // ==========================================
+
+  socket.on('updateImpSettings', (settings) => {
+    const room = rooms[currentRoom];
+    if (room && room.host === socket.id && room.gameType === 'imposteur') {
+      room.impSettings = settings;
+      io.to(currentRoom).emit('impSettingsUpdated', settings);
     }
   });
 
-  socket.on('disconnect', () => {
-    if (currentRoom && rooms[currentRoom]) {
-      const room = rooms[currentRoom];
-      if (room.players[socket.id]) {
-        const isPlayer = room.players[socket.id].role === 'player';
-        room.players[socket.id].connected = false;
-        if (isPlayer) {
-          io.to(currentRoom).emit('playerDisconnectedCount', { time: 20 });
-          room.disconnectTimeout = setTimeout(() => {
-            io.to(currentRoom).emit('errorMsg', "L'adversaire s'est déconnecté définitivement.");
-            delete rooms[currentRoom];
-          }, 20000);
-        } else {
-          delete room.players[socket.id];
-          io.to(currentRoom).emit('shopUpdate', { players: room.players });
-        }
+  socket.on('startImposteurGame', async () => {
+    const room = rooms[currentRoom];
+    if (!room || room.host !== socket.id || room.gameType !== 'imposteur') return;
+    
+    Object.values(room.players).forEach(p => p.score = 0);
+    room.impState.round = 1;
+    await startImposteurRound(currentRoom);
+  });
+
+  socket.on('submitImpWord', (word) => {
+    const room = rooms[currentRoom];
+    if (!room || room.state !== 'PLAYING') return;
+    
+    const activePlayerId = room.impState.turnOrder[room.impState.currentTurnIdx];
+    if (socket.id !== activePlayerId) return;
+
+    const pokeName = normalizeString(room.impState.secretPoke.name);
+    const submittedWord = normalizeString(word);
+
+    // ANTI-TRICHE
+    if (submittedWord.includes(pokeName) || (pokeName.includes(submittedWord) && submittedWord.length > 3)) {
+      room.impState.timeLeft = Math.floor(room.impState.timeLeft / 2);
+      socket.emit('impWordRejected', { msg: "Mot interdit ou trop proche du nom !", timeLeft: room.impState.timeLeft });
+      if (room.impState.timeLeft <= 0) {
+        clearInterval(room.impState.timer);
+        handleAutoWord(currentRoom, activePlayerId);
       }
+      return;
+    }
+
+    clearInterval(room.impState.timer);
+    acceptWordAndNextTurn(currentRoom, activePlayerId, word, false);
+  });
+
+  socket.on('submitImpVote', (suspectId) => {
+    const room = rooms[currentRoom];
+    if (!room || room.state !== 'VOTING') return;
+    
+    room.impState.votes[socket.id] = suspectId;
+    const totalPlayers = Object.keys(room.players).filter(id => room.players[id].connected).length;
+    if (Object.keys(room.impState.votes).length >= totalPlayers) {
+      resolveVoting(currentRoom);
     }
   });
+
+  socket.on('submitImpCounterAttack', (guess) => {
+    const room = rooms[currentRoom];
+    if (!room || room.state !== 'COUNTER_ATTACK' || socket.id !== room.impState.imposteurId) return;
+    
+    clearTimeout(room.impState.timer);
+    const pokeName = normalizeString(room.impState.secretPoke.name);
+    const theGuess = normalizeString(guess);
+    const success = (pokeName === theGuess);
+    finishImposteurRound(currentRoom, success, guess);
+  });
+
 });
+
+// ==========================================
+// LOGIQUE INTERNE - POKEAUC
+// ==========================================
 
 async function startNextAuction(roomCode) {
   const room = rooms[roomCode];
@@ -435,8 +560,7 @@ function sendBattleUpdate(roomCode, logMsg) {
   const room = rooms[roomCode];
   const b = room.battleState;
   io.to(roomCode).emit('battleUpdate', {
-    battle: b, p1Team: room.players[b.p1.id].team, p2Team: room.players[b.p2.id].team,
-    log: logMsg, gameState: room.state
+    battle: b, p1Team: room.players[b.p1.id].team, p2Team: room.players[b.p2.id].team, log: logMsg, gameState: room.state
   });
 }
 
@@ -444,9 +568,156 @@ function sendBattleUpdateToSocket(socketId, roomCode, logMsg) {
   const room = rooms[roomCode];
   const b = room.battleState;
   io.to(socketId).emit('battleUpdate', {
-    battle: b, p1Team: room.players[b.p1.id].team, p2Team: room.players[b.p2.id].team,
-    log: logMsg, gameState: room.state
+    battle: b, p1Team: room.players[b.p1.id].team, p2Team: room.players[b.p2.id].team, log: logMsg, gameState: room.state
   });
 }
 
-server.listen(process.env.PORT || 3000, () => console.log('Serveur PokeAuc V10 actif !'));
+// ==========================================
+// LOGIQUE INTERNE - L'IMPOSTEUR
+// ==========================================
+
+async function startImposteurRound(roomCode) {
+  const room = rooms[roomCode];
+  room.state = 'PLAYING';
+  
+  let poke = await getRandomPokemon();
+  while(!poke) poke = await getRandomPokemon();
+  
+  room.impState.secretPoke = poke;
+  room.impState.wordsLog = [];
+  room.impState.votes = {};
+  room.impState.currentWordLap = 1;
+
+  const playerIds = Object.keys(room.players).filter(id => room.players[id].connected);
+  room.impState.turnOrder = playerIds.sort(() => Math.random() - 0.5);
+  room.impState.currentTurnIdx = 0;
+  room.impState.imposteurId = playerIds[Math.floor(Math.random() * playerIds.length)];
+
+  playerIds.forEach(id => {
+    const isImp = (id === room.impState.imposteurId);
+    io.to(id).emit('impRoundStarted', {
+      isImposteur: isImp,
+      pokemon: isImp ? null : { name: poke.name, sprite: poke.sprite },
+      turnOrder: room.impState.turnOrder,
+      players: room.players
+    });
+  });
+
+  startImposteurTurn(roomCode);
+}
+
+function startImposteurTurn(roomCode) {
+  const room = rooms[roomCode];
+  if (!room) return;
+  
+  const activePlayerId = room.impState.turnOrder[room.impState.currentTurnIdx];
+  room.impState.timeLeft = 60;
+  
+  io.to(roomCode).emit('impNewTurn', { activePlayerId, timeLeft: 60, lap: room.impState.currentWordLap });
+
+  if (room.impState.timer) clearInterval(room.impState.timer);
+  room.impState.timer = setInterval(() => {
+    room.impState.timeLeft--;
+    io.to(roomCode).emit('impTimerUpdate', room.impState.timeLeft);
+    
+    if (room.impState.timeLeft <= 0) {
+      clearInterval(room.impState.timer);
+      handleAutoWord(roomCode, activePlayerId);
+    }
+  }, 1000);
+}
+
+function handleAutoWord(roomCode, playerId) {
+  const room = rooms[roomCode];
+  const p = room.impState.secretPoke;
+  const hints = [`Type: ${p.types}`, `Couleur: ${p.color}`, `Taille: ${p.height/10}m`, `Poids: ${p.weight/10}kg`];
+  const randomHint = hints[Math.floor(Math.random() * hints.length)] + " (Auto)";
+  acceptWordAndNextTurn(roomCode, playerId, randomHint, true);
+}
+
+function acceptWordAndNextTurn(roomCode, playerId, word, isAuto) {
+  const room = rooms[roomCode];
+  room.impState.wordsLog.push({ playerId, word, isAuto });
+  io.to(roomCode).emit('impWordAccepted', { playerId, word, isAuto, log: room.impState.wordsLog });
+
+  room.impState.currentTurnIdx++;
+  
+  if (room.impState.currentTurnIdx >= room.impState.turnOrder.length) {
+    room.impState.currentTurnIdx = 0;
+    room.impState.currentWordLap++;
+    
+    if (room.impState.currentWordLap > room.impSettings.wordsPerPlayer) {
+      return startImposteurVoting(roomCode);
+    }
+  }
+  
+  setTimeout(() => startImposteurTurn(roomCode), 2000);
+}
+
+function startImposteurVoting(roomCode) {
+  const room = rooms[roomCode];
+  room.state = 'VOTING';
+  io.to(roomCode).emit('impStartVoting', { log: room.impState.wordsLog });
+}
+
+function resolveVoting(roomCode) {
+  const room = rooms[roomCode];
+  room.state = 'RESOLUTION';
+  
+  const counts = {};
+  Object.values(room.impState.votes).forEach(id => counts[id] = (counts[id] || 0) + 1);
+  
+  let accusedId = null;
+  let maxVotes = 0;
+  for (const [id, count] of Object.entries(counts)) {
+    if (count > maxVotes) { maxVotes = count; accusedId = id; }
+  }
+
+  const impId = room.impState.imposteurId;
+  const imposteurCaught = (accusedId === impId);
+
+  io.to(roomCode).emit('impVoteResult', { votes: room.impState.votes, accusedId, imposteurCaught, realImposteurId: impId });
+
+  if (imposteurCaught) {
+    room.state = 'COUNTER_ATTACK';
+    io.to(roomCode).emit('impCounterAttackPhase', { imposteurId: impId });
+    room.impState.timer = setTimeout(() => { finishImposteurRound(roomCode, false); }, 45000);
+  } else {
+    finishImposteurRound(roomCode, false);
+  }
+}
+
+function finishImposteurRound(roomCode, counterAttackSuccess, guess = null) {
+  const room = rooms[roomCode];
+  room.state = 'ROUND_END';
+  
+  let winners = [];
+  const impId = room.impState.imposteurId;
+
+  if (room.state === 'RESOLUTION' || (room.state === 'ROUND_END' && !counterAttackSuccess)) {
+    if (counterAttackSuccess) {
+      winners = [impId]; 
+    } else if (guess !== null) {
+      winners = Object.keys(room.players).filter(id => id !== impId); 
+    } else {
+      winners = [impId]; 
+    }
+  }
+
+  winners.forEach(id => { if (room.players[id]) room.players[id].score++; });
+
+  io.to(roomCode).emit('impRoundEnd', { secretPoke: room.impState.secretPoke, winners, scores: room.players, guess });
+
+  setTimeout(() => {
+    if (room.impState.round < room.impSettings.maxRounds) {
+      room.impState.round++;
+      startImposteurRound(roomCode);
+    } else {
+      room.state = 'LOBBY';
+      io.to(roomCode).emit('impGameOver', { scores: room.players });
+    }
+  }, 10000);
+}
+
+// Lancement du serveur unifié
+server.listen(process.env.PORT || 3000, () => console.log('Poké Game Center V10 Actif !'));
