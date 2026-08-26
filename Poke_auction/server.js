@@ -45,7 +45,6 @@ function normalizeString(str) {
   return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
 
-// Fonction unifiée pour tous les mini-jeux
 async function getRandomPokemon() {
   const id = Math.floor(Math.random() * 1025) + 1;
   try {
@@ -389,8 +388,10 @@ io.on('connection', (socket) => {
 
 async function startNextAuction(roomCode) {
   const room = rooms[roomCode];
-  if (!room) return;
+  // Verrou d'état pour éviter les lancements multiples
+  if (!room || (room.state !== 'VOTING' && room.state !== 'AUCTION')) return; 
   room.state = 'AUCTION';
+  
   const poke = await getRandomPokemon();
   if (!poke) return setTimeout(() => startNextAuction(roomCode), 1000);
 
@@ -423,11 +424,18 @@ function endAuction(roomCode) {
 
 async function checkAndFillTeams(roomCode) {
   const room = rooms[roomCode];
-  if (!room) return;
+  // Protection : Ne s'exécute QUE pendant les enchères
+  if (!room || room.state !== 'AUCTION') return;
+  
   const players = Object.values(room.players).filter(p => p.role === 'player');
+  if (players.length < 2) return; // Sécurité si déco
   const p1 = players[0], p2 = players[1];
 
-  if (p1.team.length >= 3 && p2.team.length >= 3) return setTimeout(() => enterShopPhase(roomCode), 2000);
+  // LE VERROU ANTI-BUG DE LA BOUTIQUE EST ICI
+  if (p1.team.length >= 3 && p2.team.length >= 3) {
+    room.state = 'TRANSITIONING_TO_SHOP'; // Bloque les autres appels
+    return setTimeout(() => enterShopPhase(roomCode), 2000);
+  }
 
   let needsAutoFill = null;
   if (p1.team.length >= 3 && p2.team.length < 3) needsAutoFill = p2;
@@ -451,6 +459,7 @@ async function checkAndFillTeams(roomCode) {
 
 function enterShopPhase(roomCode) {
   const room = rooms[roomCode];
+  if (!room || room.state === 'SHOP') return; // Ultime sécurité
   room.state = 'SHOP';
   room.shopItems = getShopItems();
   Object.values(room.players).forEach(p => p.ready = false);
@@ -461,6 +470,7 @@ function getFirstAliveIndex(team) { return team.findIndex(p => p.hp > 0); }
 
 function startBattle(roomCode) {
   const room = rooms[roomCode];
+  if (!room || room.state === 'BATTLE') return; // Sécurité
   room.state = 'BATTLE';
   const players = Object.values(room.players).filter(p => p.role === 'player');
   const p1 = players[0], p2 = players[1];
