@@ -7,7 +7,6 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
   <style>
-    /* THEMES (Glassmorphism + Glow) */
     :root { 
       --font-main: 'Rajdhani', sans-serif;
       --glass-bg: rgba(15, 23, 42, 0.65);
@@ -32,30 +31,10 @@
 
     .main-layout { display: flex; flex: 1; overflow: hidden; width: 100%; }
 
-    /* BOUTON RETOUR AU HUB */
-    .hub-return-btn {
-      position: fixed;
-      bottom: 55px;
-      right: 20px;
-      background: var(--glass-bg);
-      border: 1px solid var(--accent);
-      color: var(--text);
-      font-family: var(--font-main);
-      font-weight: bold;
-      padding: 10px 16px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 1.1em;
-      z-index: 1000;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    }
+    .hub-return-btn { position: fixed; bottom: 55px; right: 20px; background: var(--glass-bg); border: 1px solid var(--accent); color: var(--text); font-family: var(--font-main); font-weight: bold; padding: 10px 16px; border-radius: 20px; cursor: pointer; font-size: 1.1em; z-index: 1000; backdrop-filter: blur(10px); transition: all 0.2s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
     .hub-return-btn:hover { background: var(--accent); color: #000; transform: scale(1.05); }
 
-    /* COMPOSANTS GLASSMORPHISM */
-    .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); }
+    .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); }
 
     .team-panel { width: 280px; padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; border-left: 1px solid var(--glass-border); border-right: 1px solid var(--glass-border); }
     .profile-header { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--accent); padding-bottom: 10px; }
@@ -70,14 +49,16 @@
     .rarity-Épique { border-color: #a855f7 !important; box-shadow: 0 0 8px rgba(168,85,247,0.8); }
     .rarity-Légendaire { border-color: #eab308 !important; box-shadow: 0 0 15px rgba(234,179,8,0.8); }
 
+    /* NOUVEAU : STYLE POKÉMON K.O. DANS LE PANNEAU */
+    .fainted-slot { filter: grayscale(100%); opacity: 0.6; border-color: #475569 !important; box-shadow: none !important; }
+    .fainted-msg { color: #ef4444; font-size: 0.75em; font-weight: bold; text-transform: uppercase; background: rgba(0,0,0,0.7); padding: 2px 5px; border-radius: 4px; display: inline-block; margin-top: 2px; }
+
     .stats-tooltip { display: none; position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%); background-color: var(--glass-bg); color: var(--text); border: 1px solid var(--accent); padding: 10px; border-radius: 8px; width: max-content; z-index: 100; font-size: 0.9em; box-shadow: 0 4px 10px rgba(0,0,0,0.6); pointer-events: none; text-align: left; line-height: 1.4; backdrop-filter: blur(10px); }
     .poke-card-slot:hover .stats-tooltip { display: block; }
 
-    /* ZONE CENTRALE */
     .center-content { flex: 1; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow-y: auto; width: 100%; }
     .card { padding: 20px; width: 100%; max-width: 600px; text-align: center; border-radius: 16px; }
 
-    /* BOUTONS NEON */
     .btn { background: transparent; border: 2px solid var(--accent); color: var(--text); font-family: var(--font-main); font-weight: bold; padding: 10px 20px; border-radius: 30px; cursor: pointer; font-size: 1.1em; margin: 5px; text-transform: uppercase; transition: all 0.2s ease; box-shadow: var(--glow); text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
     .btn:active { transform: scale(0.95); }
     .btn:hover { background: var(--accent); color: #000; text-shadow: none; }
@@ -91,7 +72,6 @@
     .avatar-option { width: 55px; height: 55px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; padding: 2px; margin: auto; object-fit: cover; transition: all 0.2s; }
     .avatar-option.selected { border-color: var(--accent); transform: scale(1.1); box-shadow: var(--glow); }
 
-    /* BOUTIQUE */
     .shop-scene { background: rgba(0, 0, 0, 0.4); border: 1px solid var(--accent); padding: 15px; border-radius: 16px; box-shadow: inset 0 0 20px rgba(234, 88, 12, 0.2); }
     .shop-items-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0; }
     .shop-item { position: relative; background: rgba(0,0,0,0.5); padding: 10px 5px; border-radius: 10px; cursor: pointer; border: 1px solid var(--glass-border); font-size: 0.9em; transition: all 0.2s; }
@@ -103,7 +83,6 @@
     .poke-select-btn:hover { border-color: var(--accent); }
     .instruction-banner { background: rgba(0,0,0,0.3); border: 1px dashed var(--accent); padding: 10px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; font-size: 1em; color: var(--accent); }
 
-    /* ARÈNE DE COMBAT 2.5D */
     .battle-scene { position: relative; width: 100%; height: 250px; border-radius: 12px; border: 1px solid var(--glass-border); overflow: hidden; margin-bottom: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
     .arena-stadium { background: linear-gradient(180deg, #475569 0%, #0f172a 100%); }
     .arena-forest { background: linear-gradient(180deg, #166534 0%, #052e16 100%); }
@@ -125,19 +104,25 @@
     .is-defender img { top: -5px; right: 25px; height: 85px; }
     .is-defender .hud { top: -15px; right: 130px; }
 
+    /* NOUVELLES ANIMATIONS DE COMBAT (GAME JUICE) */
     @keyframes shake { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-4px, 3px); } 75% { transform: translate(4px, -3px); } }
     .shake { animation: shake 0.35s; }
     @keyframes damageFlash { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(0.4) sepia(1) saturate(6) hue-rotate(-50deg); } }
     .flash-damage { animation: damageFlash 0.35s; }
+    
+    @keyframes idleSprite { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
+    .sprite-idle { animation: idleSprite 2.5s ease-in-out infinite; }
 
     .floating-text { position: absolute; color: #ff3333; font-weight: 900; font-size: 2em; text-shadow: 2px 2px 0 #000; z-index: 10; pointer-events: none; animation: floatUp 1s forwards; }
     @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-45px) scale(1.2); } }
 
-    .hp-bar-bg { background: #334155; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 5px; border: 1px solid #000; }
-    .hp-bar-fill { height: 100%; background: #22c55e; transition: width 0.3s; }
+    /* NOUVELLE BARRE DE VIE SUPERPOSÉE (Vert sur Rouge) */
+    .hp-bar-bg { position: relative; background: #334155; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 5px; border: 1px solid #000; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
+    .hp-bar-trail { position: absolute; top: 0; left: 0; height: 100%; background: #ef4444; transition: width 1.2s ease-out; z-index: 1; }
+    .hp-bar-fill { position: absolute; top: 0; left: 0; height: 100%; background: #22c55e; transition: width 0.2s ease-out; z-index: 2; border-right: 1px solid rgba(255,255,255,0.4); }
+
     .battle-log { background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); padding: 10px; border-radius: 8px; color: var(--accent); font-weight: bold; margin-bottom: 10px; font-size: 1em; min-height: 42px; display: flex; align-items: center; justify-content: center; text-shadow: 1px 1px 2px #000; }
 
-    /* FOOTER */
     footer { padding: 8px; background: var(--glass-bg); border-top: 1px solid var(--glass-border); display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; flex-shrink: 0; -webkit-overflow-scrolling: touch; backdrop-filter: blur(10px); }
     footer::-webkit-scrollbar { display: none; }
     .theme-btn { border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff; padding: 6px 12px; border-radius: 12px; font-weight: bold; font-family: var(--font-main); cursor: pointer; font-size: 0.9em; flex-shrink: 0; transition: 0.2s; }
@@ -146,7 +131,6 @@
     #disconnectOverlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; backdrop-filter: blur(5px); }
     .hidden { display: none !important; }
 
-    /* ADAPTATION MOBILE */
     @media (max-width: 768px) {
       .main-layout { flex-direction: column; }
       .team-panel, .glass-panel.team-panel { width: 100%; height: auto; max-height: 90px; flex-direction: row; padding: 8px 12px; gap: 10px; border: none; border-bottom: 1px solid var(--glass-border); flex-shrink: 0; border-radius: 0; }
@@ -155,15 +139,12 @@
       .team-panel > div:last-child { display: flex; flex-direction: row; gap: 8px; overflow-x: auto; flex: 1; align-items: center; }
       .poke-card-slot { padding: 4px 8px; }
       .poke-card-slot img { width: 35px; height: 35px; }
-
       .center-content { padding: 10px; justify-content: flex-start; }
       .card { padding: 15px; border-radius: 16px; }
       .shop-items-grid { grid-template-columns: repeat(2, 1fr); }
-
       .is-attacker .hud { left: auto; right: 10px; bottom: 5px; width: 130px; }
       .is-defender .hud { right: auto; left: 10px; top: 10px; width: 130px; }
       h1 { font-size: 1.5em; }
-      
       .hub-return-btn { bottom: 55px; right: 10px; padding: 8px 12px; font-size: 1em; }
     }
   </style>
@@ -204,7 +185,6 @@
         <input type="text" id="usernameInput" placeholder="Votre Pseudo" value="Dresseur">
         <p style="margin: 15px 0 5px 0; font-size: 1.1em; font-weight: bold;">Choisissez votre Dresseur :</p>
         
-        <!-- AVATARS GEN 1 à 9 -->
         <div class="avatar-grid">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/red.png" class="avatar-option selected" title="Red" onclick="selectAvatar(this)">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/leaf.png" class="avatar-option" title="Leaf" onclick="selectAvatar(this)">
@@ -257,14 +237,10 @@
         <button class="btn" onclick="placeBid()">Miser +50 🪙</button>
       </div>
 
-      <!-- BOUTIQUE CORRIGÉE : PLUS DE BUG DE INNERHTML -->
       <div id="shopZone" class="card glass-panel shop-scene hidden">
         <div id="shopContent">
           <h2 style="margin:0 0 10px 0;">Centre Pokémon</h2>
-          <div class="instruction-banner">
-            👉 1. Touchez un objet<br>
-            👉 2. Touchez votre Pokémon pour équiper !
-          </div>
+          <div class="instruction-banner">👉 1. Touchez un objet<br>👉 2. Touchez votre Pokémon pour équiper !</div>
           <button class="btn" style="border-color: #eab308; color: #eab308; font-size: 0.9em; padding: 8px 15px; box-shadow: 0 0 10px rgba(234, 179, 8, 0.4);" onclick="selectShopAction('reroll', this)">Lootbox Échange (150 🪙)</button>
           <div id="shopItemsContainer" class="shop-items-grid"></div>
           <div id="shopTeamContainer" class="poke-select-grid"></div>
@@ -277,25 +253,36 @@
 
       <div id="battleZone" class="card glass-panel hidden" style="padding: 15px;">
         <div id="arenaScene" class="battle-scene arena-stadium">
+          
           <div id="p1Wrapper" class="poke-wrapper is-attacker">
             <div class="slot"></div>
-            <img id="p1SpriteAnim" src="">
+            <!-- L'image a désormais une classe sprite-idle -->
+            <img id="p1SpriteAnim" src="" class="sprite-idle">
             <div class="hud">
               <strong id="p1NameAnim" style="font-size: 1em;">P1</strong>
               <div id="p1HpTextAnim" style="font-size: 0.9em; font-weight: bold;"></div>
-              <div class="hp-bar-bg"><div id="p1HpBarAnim" class="hp-bar-fill"></div></div>
+              <!-- La nouvelle barre de vie avec le "Trail" (Tracée rouge) -->
+              <div class="hp-bar-bg">
+                <div id="p1HpBarTrailAnim" class="hp-bar-trail"></div>
+                <div id="p1HpBarAnim" class="hp-bar-fill"></div>
+              </div>
             </div>
           </div>
 
           <div id="p2Wrapper" class="poke-wrapper is-defender">
             <div class="slot"></div>
-            <img id="p2SpriteAnim" src="">
+            <img id="p2SpriteAnim" src="" class="sprite-idle">
             <div class="hud">
               <strong id="p2NameAnim" style="font-size: 1em;">P2</strong>
               <div id="p2HpTextAnim" style="font-size: 0.9em; font-weight: bold;"></div>
-              <div class="hp-bar-bg"><div id="p2HpBarAnim" class="hp-bar-fill"></div></div>
+              <!-- La nouvelle barre de vie avec le "Trail" (Tracée rouge) -->
+              <div class="hp-bar-bg">
+                <div id="p2HpBarTrailAnim" class="hp-bar-trail"></div>
+                <div id="p2HpBarAnim" class="hp-bar-fill"></div>
+              </div>
             </div>
           </div>
+
         </div>
 
         <div id="battleLog" class="battle-log">Préparation...</div>
@@ -342,7 +329,6 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // --- REDIRECTION F5 VERS LE HUB ---
     const navEntries = performance.getEntriesByType("navigation");
     if (navEntries.length > 0 && navEntries[0].type === "reload") {
       window.location.href = 'index.html';
@@ -357,30 +343,17 @@
     let activeShopAction = null; 
     let decoInterval = null;
 
-    // --- AUDIO SYSTEM ---
-    const bgm = {
-      lobby: new Audio('/sounds/lobby.mp3'),
-      auction: new Audio('/sounds/auction.mp3'),
-      shop: new Audio('/sounds/shop_ambience.mp3'),
-      battle: new Audio('/sounds/battle.mp3')
-    };
+    const bgm = { lobby: new Audio('/sounds/lobby.mp3'), auction: new Audio('/sounds/auction.mp3'), shop: new Audio('/sounds/shop_ambience.mp3'), battle: new Audio('/sounds/battle.mp3') };
     Object.values(bgm).forEach(track => { track.loop = true; track.volume = 0.5; });
     bgm.shop.volume = 0.3; 
-
-    const sfx = {
-      bid: new Audio('/sounds/bid.mp3'),
-      hit: new Audio('/sounds/hit.mp3')
-    };
+    const sfx = { bid: new Audio('/sounds/bid.mp3'), hit: new Audio('/sounds/hit.mp3') };
 
     let currentTrack = null;
     function playMusic(trackName) {
       if (currentTrack === bgm[trackName]) return;
       if (currentTrack) currentTrack.pause();
       currentTrack = bgm[trackName];
-      if (currentTrack) {
-        currentTrack.currentTime = 0;
-        currentTrack.play().catch(e => console.log("Waiting for user interaction for audio."));
-      }
+      if (currentTrack) { currentTrack.currentTime = 0; currentTrack.play().catch(e => console.log("Attente action joueur.")); }
     }
 
     window.onload = () => {
@@ -409,24 +382,14 @@
       selectedAvatarUrl = el.src;
     }
     
-    function createRoom() { 
-      saveProfile(); 
-      playMusic('lobby');
-      socket.emit('createRoom', { name: document.getElementById('usernameInput').value || 'Dresseur', avatar: selectedAvatarUrl, gameType: 'pokeauc' }); 
-    }
+    function createRoom() { saveProfile(); playMusic('lobby'); socket.emit('createRoom', { name: document.getElementById('usernameInput').value || 'Dresseur', avatar: selectedAvatarUrl, gameType: 'pokeauc' }); }
     function joinRoom() { 
       const code = document.getElementById('roomCodeInput').value.trim();
-      if (code) { 
-        saveProfile(); 
-        playMusic('lobby');
-        socket.emit('joinRoom', { roomCode: code, name: document.getElementById('usernameInput').value || 'Dresseur', avatar: selectedAvatarUrl }); 
-      }
+      const name = document.getElementById('usernameInput').value || 'Dresseur';
+      if (code) { saveProfile(); playMusic('lobby'); socket.emit('joinRoom', { roomCode: code, name, avatar: selectedAvatarUrl }); }
     }
     
-    function goToHub() {
-      socket.emit('leaveRoom');
-      window.location.href = 'index.html';
-    }
+    function goToHub() { socket.emit('leaveRoom'); window.location.href = 'index.html'; }
 
     socket.on('playerDisconnectedCount', (data) => {
       document.getElementById('disconnectOverlay').classList.remove('hidden');
@@ -435,17 +398,11 @@
       if(decoInterval) clearInterval(decoInterval);
       decoInterval = setInterval(() => {
         time--; document.getElementById('decoTimer').innerText = time;
-        if(time <= 0) {
-          clearInterval(decoInterval);
-          goToHub();
-        }
+        if(time <= 0) { clearInterval(decoInterval); goToHub(); }
       }, 1000);
     });
     
-    socket.on('playerReconnected', () => {
-      document.getElementById('disconnectOverlay').classList.add('hidden');
-      if(decoInterval) clearInterval(decoInterval);
-    });
+    socket.on('playerReconnected', () => { document.getElementById('disconnectOverlay').classList.add('hidden'); if(decoInterval) clearInterval(decoInterval); });
 
     socket.on('roomCreated', (data) => { myRole = data.role; switchZone('waitingZone'); updateBadges(data.roomCode); });
     socket.on('roomJoined', (data) => { myRole = data.role; updateBadges(data.roomCode); });
@@ -464,19 +421,12 @@
     });
 
     socket.on('timerTick', (t) => { document.getElementById('timer').innerText = t; });
-    socket.on('bidUpdated', (data) => {
-      sfx.bid.play().catch(e => {});
-      document.getElementById('highestBid').innerText = data.highestBid;
-      document.getElementById('highestBidder').innerText = data.highestBidderName;
-      document.getElementById('timer').innerText = data.timeLeft;
-    });
+    socket.on('bidUpdated', (data) => { sfx.bid.play().catch(e => {}); document.getElementById('highestBid').innerText = data.highestBid; document.getElementById('highestBidder').innerText = data.highestBidderName; document.getElementById('timer').innerText = data.timeLeft; });
     socket.on('auctionEnded', (data) => { confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } }); if (data.players) renderTeams(data.players); });
 
-    // --- CORRECTION DU BUG DE LA BOUTIQUE LORS DE LA REVANCHE ---
     socket.on('enterShop', (data) => {
       playMusic('shop');
       switchZone('shopZone');
-      // On s'assure de réafficher la boutique et de cacher le message d'attente !
       document.getElementById('shopContent').classList.remove('hidden');
       document.getElementById('shopWaiting').classList.add('hidden');
       
@@ -485,8 +435,7 @@
       
       document.getElementById('shopItemsContainer').innerHTML = data.shopItems.map(item => `
         <div class="shop-item" onclick="selectShopAction('${item.id}', this)">
-          <strong>${item.name}</strong><br>
-          <small>${item.price} 🪙</small>
+          <strong>${item.name}</strong><br><small>${item.price} 🪙</small>
           <div class="item-tooltip">${item.desc}</div>
         </div>
       `).join('');
@@ -494,18 +443,13 @@
       if (myRole === 'player' && myData) {
         document.getElementById('shopTeamContainer').innerHTML = myData.team.map((poke, index) => `
           <div class="poke-select-btn rarity-${poke.rarity}" onclick="applyShopAction(${index})">
-            <img src="${poke.sprite}" style="width:36px;"><br>
-            <small style="font-size:0.8em; font-weight:bold;">${poke.hp}/${poke.hpMax} PV</small>
+            <img src="${poke.sprite}" style="width:36px;"><br><small style="font-size:0.8em; font-weight:bold;">${poke.hp}/${poke.hpMax} PV</small>
           </div>
         `).join('');
       } else { document.getElementById('shopTeamContainer').innerHTML = ""; }
     });
 
-    function selectShopAction(actionId, el) {
-      activeShopAction = actionId;
-      document.querySelectorAll('.shop-item').forEach(i => i.classList.remove('selected'));
-      if(el) el.classList.add('selected');
-    }
+    function selectShopAction(actionId, el) { activeShopAction = actionId; document.querySelectorAll('.shop-item').forEach(i => i.classList.remove('selected')); if(el) el.classList.add('selected'); }
     function applyShopAction(pokeIndex) {
       if (!activeShopAction) return alert("Sélectionnez d'abord un objet ou la Lootbox !");
       if (activeShopAction === 'reroll') socket.emit('rerollPokemon', pokeIndex);
@@ -518,48 +462,62 @@
       renderTeams(data.players);
       const myData = Object.values(data.players).find(p => p.id === mySocketId);
       const shopContainer = document.getElementById('shopTeamContainer');
-      // Sécurité anti-crash si le joueur a déjà cliqué sur "Prêt"
       if(myRole === 'player' && myData && shopContainer && !document.getElementById('shopContent').classList.contains('hidden')) {
          shopContainer.innerHTML = myData.team.map((poke, index) => `
           <div class="poke-select-btn rarity-${poke.rarity}" onclick="applyShopAction(${index})">
-            <img src="${poke.sprite}" style="width:36px;"><br>
-            <small style="font-size:0.8em; font-weight:bold;">${poke.hp}/${poke.hpMax} PV</small>
+            <img src="${poke.sprite}" style="width:36px;"><br><small style="font-size:0.8em; font-weight:bold;">${poke.hp}/${poke.hpMax} PV</small>
           </div>
         `).join('');
       }
     });
 
-    // CORRECTION : On cache juste la boutique au lieu de la supprimer du code !
-    function setShopReady() { 
-      socket.emit('setShopReady'); 
-      document.getElementById('shopContent').classList.add('hidden');
-      document.getElementById('shopWaiting').classList.remove('hidden');
-    }
+    function setShopReady() { socket.emit('setShopReady'); document.getElementById('shopContent').classList.add('hidden'); document.getElementById('shopWaiting').classList.remove('hidden'); }
 
+    // === GESTION DU COMBAT ET ANIMATIONS ===
     socket.on('battleUpdate', (data) => {
       if (document.getElementById('battleZone').classList.contains('hidden')) playMusic('battle');
       switchZone('battleZone');
       
+      // MISE A JOUR DES PANNEAUX LATERAUX EN DIRECT !
+      if (data.players) renderTeams(data.players);
+
       const b = data.battle;
-      const p1Data = data.p1Team[b.p1ActiveIndex];
-      const p2Data = data.p2Team[b.p2ActiveIndex];
+      const p1Team = data.players[b.p1.id].team;
+      const p2Team = data.players[b.p2.id].team;
+      
+      const p1Data = p1Team[b.p1ActiveIndex];
+      const p2Data = p2Team[b.p2ActiveIndex];
       const isP1Attacker = (b.attackerId === b.p1.id);
       
       document.getElementById('arenaScene').className = `battle-scene arena-${b.arena}`;
 
       document.getElementById('p1NameAnim').innerText = `${p1Data.name} (${b.p1.name})`;
       document.getElementById('p1HpTextAnim').innerText = `${p1Data.hp}/${p1Data.hpMax} PV`;
-      document.getElementById('p1HpBarAnim').style.width = `${Math.max(0, (p1Data.hp / p1Data.hpMax) * 100)}%`;
+      
+      // ANIMATION DE LA BARRE P1 (Le CSS fait le travail magique du vert/rouge)
+      const p1HpPercent = Math.max(0, (p1Data.hp / p1Data.hpMax) * 100);
+      document.getElementById('p1HpBarAnim').style.width = `${p1HpPercent}%`;
+      document.getElementById('p1HpBarTrailAnim').style.width = `${p1HpPercent}%`;
+      
       document.getElementById('p1Wrapper').className = `poke-wrapper ${isP1Attacker ? 'is-attacker' : 'is-defender'}`;
       document.getElementById('p1SpriteAnim').src = isP1Attacker ? p1Data.spriteBack : p1Data.sprite;
 
       document.getElementById('p2NameAnim').innerText = `${p2Data.name} (${b.p2.name})`;
       document.getElementById('p2HpTextAnim').innerText = `${p2Data.hp}/${p2Data.hpMax} PV`;
-      document.getElementById('p2HpBarAnim').style.width = `${Math.max(0, (p2Data.hp / p2Data.hpMax) * 100)}%`;
+      
+      // ANIMATION DE LA BARRE P2
+      const p2HpPercent = Math.max(0, (p2Data.hp / p2Data.hpMax) * 100);
+      document.getElementById('p2HpBarAnim').style.width = `${p2HpPercent}%`;
+      document.getElementById('p2HpBarTrailAnim').style.width = `${p2HpPercent}%`;
+      
       document.getElementById('p2Wrapper').className = `poke-wrapper ${!isP1Attacker ? 'is-attacker' : 'is-defender'}`;
       document.getElementById('p2SpriteAnim').src = !isP1Attacker ? p2Data.spriteBack : p2Data.sprite;
 
       document.getElementById('battleLog').innerText = data.log;
+      
+      // On s'assure que les sprites ont bien l'animation "idle"
+      document.getElementById('p1SpriteAnim').classList.add('sprite-idle');
+      document.getElementById('p2SpriteAnim').classList.add('sprite-idle');
 
       if (b.lastDamage) {
         sfx.hit.play().catch(e => {}); 
@@ -567,10 +525,18 @@
         const imgEl = document.getElementById(targetPrefix + 'SpriteAnim');
         const wrapperEl = document.getElementById(targetPrefix + 'Wrapper');
 
-        imgEl.classList.remove('flash-damage', 'shake');
-        void imgEl.offsetWidth;
+        // On retire l'idle pour que le shake fonctionne bien
+        imgEl.classList.remove('sprite-idle', 'flash-damage', 'shake');
+        void imgEl.offsetWidth; // Force le navigateur à recalculer
         imgEl.classList.add('flash-damage', 'shake');
 
+        // On remet l'idle après le coup
+        setTimeout(() => {
+          imgEl.classList.remove('flash-damage', 'shake');
+          imgEl.classList.add('sprite-idle');
+        }, 1200);
+
+        // Texte flottant rouge
         const floating = document.createElement('div');
         floating.className = 'floating-text';
         floating.innerText = `-${b.lastDamage.amount}`;
@@ -601,6 +567,7 @@
       }
     });
 
+    // === GESTION DU GRISONNEMENT K.O. ===
     function renderTeams(players) {
       const keys = Object.keys(players);
       const myKey = keys.find(k => k === mySocketId) || keys[0];
@@ -611,10 +578,18 @@
         document.getElementById('myName').innerText = me.name + (myRole === 'player' ? " (Moi)" : "");
         document.getElementById('myAvatar').src = me.avatar;
         document.getElementById('myBudget').innerText = `${me.budget} 🪙`;
-        document.getElementById('myTeam').innerHTML = me.team.map(p => `
-          <div class="poke-card-slot rarity-${p.rarity}">
+        
+        document.getElementById('myTeam').innerHTML = me.team.map(p => {
+          const isFainted = p.hp <= 0;
+          const faintedClass = isFainted ? 'fainted-slot' : '';
+          const hpDisplay = isFainted 
+            ? `<div class="fainted-msg">Plus capable de se battre</div>` 
+            : `<small style="font-weight:bold;">${p.hp}/${p.hpMax} PV</small>`;
+            
+          return `
+          <div class="poke-card-slot rarity-${p.rarity} ${faintedClass}">
             <img src="${p.sprite}"/>
-            <div><strong style="font-size:1.1em;">${p.name}</strong><br><small style="font-weight:bold;">${p.hp}/${p.hpMax} PV</small></div>
+            <div><strong style="font-size:1.1em;">${p.name}</strong><br>${hpDisplay}</div>
             ${p.item ? `<span class="item-badge">${p.item.name}</span>` : ''}
             <div class="stats-tooltip">
               <strong style="color:var(--accent);">Stats (Lvl 50)</strong><br>
@@ -622,18 +597,27 @@
               🔮 SpA: ${p.spAtk} | 🧿 SpD: ${p.spDef}<br>
               💨 Vit: ${p.speed}
             </div>
-          </div>
-        `).join('');
+          </div>`;
+        }).join('');
       }
+      
       if (oppKey && players[oppKey]) {
         const opp = players[oppKey];
         document.getElementById('opponentName').innerText = opp.name;
         document.getElementById('opponentAvatar').src = opp.avatar;
         document.getElementById('opponentBudget').innerText = `${opp.budget} 🪙`;
-        document.getElementById('opponentTeam').innerHTML = opp.team.map(p => `
-          <div class="poke-card-slot rarity-${p.rarity}">
+        
+        document.getElementById('opponentTeam').innerHTML = opp.team.map(p => {
+          const isFainted = p.hp <= 0;
+          const faintedClass = isFainted ? 'fainted-slot' : '';
+          const hpDisplay = isFainted 
+            ? `<div class="fainted-msg">Plus capable de se battre</div>` 
+            : `<small style="font-weight:bold;">${p.hp}/${p.hpMax} PV</small>`;
+            
+          return `
+          <div class="poke-card-slot rarity-${p.rarity} ${faintedClass}">
             <img src="${p.sprite}"/>
-            <div><strong style="font-size:1.1em;">${p.name}</strong><br><small style="font-weight:bold;">${p.hp}/${p.hpMax} PV</small></div>
+            <div><strong style="font-size:1.1em;">${p.name}</strong><br>${hpDisplay}</div>
             ${p.item ? `<span class="item-badge">${p.item.name}</span>` : ''}
             <div class="stats-tooltip">
               <strong style="color:var(--accent);">Stats (Lvl 50)</strong><br>
@@ -641,8 +625,8 @@
               🔮 SpA: ${p.spAtk} | 🧿 SpD: ${p.spDef}<br>
               💨 Vit: ${p.speed}
             </div>
-          </div>
-        `).join('');
+          </div>`;
+        }).join('');
       }
     }
 
