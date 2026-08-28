@@ -35,7 +35,7 @@
     /* BOUTON RETOUR AU HUB */
     .hub-return-btn {
       position: fixed;
-      bottom: 55px; /* Juste au-dessus du footer */
+      bottom: 55px;
       right: 20px;
       background: var(--glass-bg);
       border: 1px solid var(--accent);
@@ -85,21 +85,7 @@
     input { padding: 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3); color: var(--text); text-align: center; margin: 5px; width: 85%; max-width: 280px; font-size: 1em; font-family: var(--font-main); }
     input:focus { outline: none; border-color: var(--accent); box-shadow: var(--glow); }
 
-    
-    .avatar-grid { 
-      display: flex; 
-      flex-wrap: wrap; 
-      justify-content: center; 
-      gap: 10px; 
-      margin: 15px 0; 
-      max-height: 160px; /* Limite la hauteur */
-      overflow-y: auto; /* Ajoute un scroll si besoin */
-      padding: 5px;
-      border: 1px inset var(--glass-border);
-      border-radius: 12px;
-      background: rgba(0,0,0,0.2);
-    }
-    /* Style de la barre de défilement pour la grille */
+    .avatar-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 15px 0; max-height: 160px; overflow-y: auto; padding: 5px; border: 1px inset var(--glass-border); border-radius: 12px; background: rgba(0,0,0,0.2); }
     .avatar-grid::-webkit-scrollbar { width: 6px; }
     .avatar-grid::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
     .avatar-option { width: 55px; height: 55px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; padding: 2px; margin: auto; object-fit: cover; transition: all 0.2s; }
@@ -184,7 +170,6 @@
 </head>
 <body class="theme-zekrom">
 
-  <!-- BOUTON RETOUR AU HUB (Flottant) -->
   <button class="hub-return-btn" onclick="goToHub()">🏠 Hub</button>
 
   <header>
@@ -219,42 +204,29 @@
         <input type="text" id="usernameInput" placeholder="Votre Pseudo" value="Dresseur">
         <p style="margin: 15px 0 5px 0; font-size: 1.1em; font-weight: bold;">Choisissez votre Dresseur :</p>
         
+        <!-- AVATARS GEN 1 à 9 -->
         <div class="avatar-grid">
-          <!-- GEN 1 : Kanto -->
           <img src="https://play.pokemonshowdown.com/sprites/trainers/red.png" class="avatar-option selected" title="Red" onclick="selectAvatar(this)">
-          
-          
-          <!-- GEN 2 : Johto -->
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/leaf.png" class="avatar-option" title="Leaf" onclick="selectAvatar(this)">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/ethan.png" class="avatar-option" title="Luth" onclick="selectAvatar(this)">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/lyra.png" class="avatar-option" title="Célesta" onclick="selectAvatar(this)">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/kris.png" class="avatar-option" title="Christy" onclick="selectAvatar(this)">
-          
-          <!-- GEN 3 : Hoenn -->
           <img src="https://play.pokemonshowdown.com/sprites/trainers/brendan.png" class="avatar-option" title="Brice" onclick="selectAvatar(this)">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/may.png" class="avatar-option" title="Flora" onclick="selectAvatar(this)">
-          
-          <!-- GEN 4 : Sinnoh -->
           <img src="https://play.pokemonshowdown.com/sprites/trainers/lucas.png" class="avatar-option" title="Louka" onclick="selectAvatar(this)">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/dawn.png" class="avatar-option" title="Aurore" onclick="selectAvatar(this)">
-          
-          <!-- GEN 5 : Unys -->
           <img src="https://play.pokemonshowdown.com/sprites/trainers/hilbert.png" class="avatar-option" title="Ludwig" onclick="selectAvatar(this)">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/hilda.png" class="avatar-option" title="Ludvina" onclick="selectAvatar(this)">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/nate.png" class="avatar-option" title="Mélis" onclick="selectAvatar(this)">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/rosa.png" class="avatar-option" title="Écho" onclick="selectAvatar(this)">
-          
-          <!-- GEN 6 : Kalos -->
           <img src="https://play.pokemonshowdown.com/sprites/trainers/calem.png" class="avatar-option" title="Kalem" onclick="selectAvatar(this)">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/serena.png" class="avatar-option" title="Serena" onclick="selectAvatar(this)">
-          
-          <!-- GEN 7 : Alola -->
           <img src="https://play.pokemonshowdown.com/sprites/trainers/elio.png" class="avatar-option" title="Elio" onclick="selectAvatar(this)">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/selene.png" class="avatar-option" title="Selene" onclick="selectAvatar(this)">
-          
-          <!-- GEN 8 : Galar -->
           <img src="https://play.pokemonshowdown.com/sprites/trainers/victor.png" class="avatar-option" title="Victor" onclick="selectAvatar(this)">
           <img src="https://play.pokemonshowdown.com/sprites/trainers/gloria.png" class="avatar-option" title="Gloria" onclick="selectAvatar(this)">
-          
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/florian.png" class="avatar-option" title="Florian" onclick="selectAvatar(this)">
+          <img src="https://play.pokemonshowdown.com/sprites/trainers/juliana.png" class="avatar-option" title="Juliana" onclick="selectAvatar(this)">
         </div>
 
         <button class="btn" onclick="createRoom()">Créer un Salon</button>
@@ -262,7 +234,6 @@
         <input type="text" id="roomCodeInput" placeholder="Code (ex: PKM-1234)">
         <button class="btn" onclick="joinRoom()">Rejoindre Salon</button>
       </div>
-
 
       <div id="waitingZone" class="card glass-panel hidden">
         <h2 style="margin: 0 0 10px 0;">Salon : <span id="displayRoomCode" style="color: var(--accent);"></span></h2>
@@ -286,16 +257,22 @@
         <button class="btn" onclick="placeBid()">Miser +50 🪙</button>
       </div>
 
+      <!-- BOUTIQUE CORRIGÉE : PLUS DE BUG DE INNERHTML -->
       <div id="shopZone" class="card glass-panel shop-scene hidden">
-        <h2 style="margin:0 0 10px 0;">Centre Pokémon</h2>
-        <div class="instruction-banner">
-          👉 1. Touchez un objet<br>
-          👉 2. Touchez votre Pokémon pour équiper !
+        <div id="shopContent">
+          <h2 style="margin:0 0 10px 0;">Centre Pokémon</h2>
+          <div class="instruction-banner">
+            👉 1. Touchez un objet<br>
+            👉 2. Touchez votre Pokémon pour équiper !
+          </div>
+          <button class="btn" style="border-color: #eab308; color: #eab308; font-size: 0.9em; padding: 8px 15px; box-shadow: 0 0 10px rgba(234, 179, 8, 0.4);" onclick="selectShopAction('reroll', this)">Lootbox Échange (150 🪙)</button>
+          <div id="shopItemsContainer" class="shop-items-grid"></div>
+          <div id="shopTeamContainer" class="poke-select-grid"></div>
+          <button class="btn" style="margin-top:15px; border-color: #22c55e; color: #22c55e; box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);" onclick="setShopReady()">Prêt au combat !</button>
         </div>
-        <button class="btn" style="border-color: #eab308; color: #eab308; font-size: 0.9em; padding: 8px 15px; box-shadow: 0 0 10px rgba(234, 179, 8, 0.4);" onclick="selectShopAction('reroll', this)">Lootbox Échange (150 🪙)</button>
-        <div id="shopItemsContainer" class="shop-items-grid"></div>
-        <div id="shopTeamContainer" class="poke-select-grid"></div>
-        <button class="btn" style="margin-top:15px; border-color: #22c55e; color: #22c55e; box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);" onclick="setShopReady()">Prêt au combat !</button>
+        <div id="shopWaiting" class="hidden">
+          <h2 style="color: var(--accent); margin-top: 30px; margin-bottom: 30px;">En attente de l'adversaire...</h2>
+        </div>
       </div>
 
       <div id="battleZone" class="card glass-panel hidden" style="padding: 15px;">
@@ -366,7 +343,6 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     // --- REDIRECTION F5 VERS LE HUB ---
-    // Si l'utilisateur actualise la page (F5), il est renvoyé au menu central
     const navEntries = performance.getEntriesByType("navigation");
     if (navEntries.length > 0 && navEntries[0].type === "reload") {
       window.location.href = 'index.html';
@@ -447,7 +423,6 @@
       }
     }
     
-    // Fonction appelée par le nouveau bouton "Retour au Hub"
     function goToHub() {
       socket.emit('leaveRoom');
       window.location.href = 'index.html';
@@ -462,10 +437,11 @@
         time--; document.getElementById('decoTimer').innerText = time;
         if(time <= 0) {
           clearInterval(decoInterval);
-          goToHub(); // Renvoie au hub quand le timer de l'adversaire déconnecté tombe à 0
+          goToHub();
         }
       }, 1000);
     });
+    
     socket.on('playerReconnected', () => {
       document.getElementById('disconnectOverlay').classList.add('hidden');
       if(decoInterval) clearInterval(decoInterval);
@@ -496,9 +472,14 @@
     });
     socket.on('auctionEnded', (data) => { confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } }); if (data.players) renderTeams(data.players); });
 
+    // --- CORRECTION DU BUG DE LA BOUTIQUE LORS DE LA REVANCHE ---
     socket.on('enterShop', (data) => {
       playMusic('shop');
       switchZone('shopZone');
+      // On s'assure de réafficher la boutique et de cacher le message d'attente !
+      document.getElementById('shopContent').classList.remove('hidden');
+      document.getElementById('shopWaiting').classList.add('hidden');
+      
       renderTeams(data.players);
       const myData = Object.values(data.players).find(p => p.id === mySocketId);
       
@@ -536,8 +517,10 @@
     socket.on('shopUpdate', (data) => {
       renderTeams(data.players);
       const myData = Object.values(data.players).find(p => p.id === mySocketId);
-      if(myRole === 'player' && myData && !document.getElementById('shopZone').classList.contains('hidden')) {
-         document.getElementById('shopTeamContainer').innerHTML = myData.team.map((poke, index) => `
+      const shopContainer = document.getElementById('shopTeamContainer');
+      // Sécurité anti-crash si le joueur a déjà cliqué sur "Prêt"
+      if(myRole === 'player' && myData && shopContainer && !document.getElementById('shopContent').classList.contains('hidden')) {
+         shopContainer.innerHTML = myData.team.map((poke, index) => `
           <div class="poke-select-btn rarity-${poke.rarity}" onclick="applyShopAction(${index})">
             <img src="${poke.sprite}" style="width:36px;"><br>
             <small style="font-size:0.8em; font-weight:bold;">${poke.hp}/${poke.hpMax} PV</small>
@@ -545,7 +528,13 @@
         `).join('');
       }
     });
-    function setShopReady() { socket.emit('setShopReady'); document.getElementById('shopZone').innerHTML = "<h2>En attente de l'adversaire...</h2>"; }
+
+    // CORRECTION : On cache juste la boutique au lieu de la supprimer du code !
+    function setShopReady() { 
+      socket.emit('setShopReady'); 
+      document.getElementById('shopContent').classList.add('hidden');
+      document.getElementById('shopWaiting').classList.remove('hidden');
+    }
 
     socket.on('battleUpdate', (data) => {
       if (document.getElementById('battleZone').classList.contains('hidden')) playMusic('battle');
