@@ -11,10 +11,6 @@ app.use(express.static('public'));
 
 const rooms = {};
 
-// ==========================================
-// DONNÉES GLOBALES & UTILITAIRES
-// ==========================================
-
 const SHOP_ITEMS = [
   { id: 'potion', name: 'Potion', type: 'heal', value: 50, price: 50, weight: 15, desc: 'Rend 50 PV à un Pokémon.' },
   { id: 'super_potion', name: 'Super Potion', type: 'heal', value: 100, price: 80, weight: 10, desc: 'Rend 100 PV à un Pokémon.' },
@@ -56,7 +52,6 @@ async function getRandomPokemon() {
     const colorFr = colorTranslations[colorRaw] || colorRaw;
     
     const types = pokeRes.data.types.map(t => t.type.name).join(' / ');
-    
     const stats = pokeRes.data.stats.map(s => s.base_stat);
     const bst = stats.reduce((a, b) => a + b, 0);
     
@@ -209,7 +204,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // --- LOGIQUE POKEAUC ---
   socket.on('voteMode', (mode) => {
     const room = rooms[currentRoom];
     if (!room || room.state !== 'VOTING' || room.gameType !== 'pokeauc') return;
@@ -295,13 +289,69 @@ io.on('connection', (socket) => {
       io.to(currentRoom).emit('startVotingPhase', { players: room.players });
     }
   });
-  
-  // --- LOGIQUE IMPOSTEUR (Conservée) ---
-  socket.on('updateImpSettings', (s) => { const r = rooms[currentRoom]; if(r && r.host === socket.id) { r.impSettings = s; io.to(currentRoom).emit('impSettingsUpdated', s); }});
-  socket.on('startImposteurGame', async () => { const r = rooms[currentRoom]; if(r && r.host === socket.id) { Object.values(r.players).forEach(p => p.score = 0); r.impState.round = 1; await startImposteurRound(currentRoom); }});
-  socket.on('submitImpWord', (w) => { /* Code intact... */ });
-  socket.on('submitImpVote', (id) => { /* Code intact... */ });
-  socket.on('submitImpCounterAttack', (g) => { /* Code intact... */ });
+
+  socket.on('updateImpSettings', (settings) => {
+    const room = rooms[currentRoom];
+    if (room && room.host === socket.id && room.gameType === 'imposteur') {
+      room.impSettings = settings;
+      io.to(currentRoom).emit('impSettingsUpdated', settings);
+    }
+  });
+
+  socket.on('startImposteurGame', async () => {
+    const room = rooms[currentRoom];
+    if (!room || room.host !== socket.id || room.gameType !== 'imposteur') return;
+    
+    Object.values(room.players).forEach(p => p.score = 0);
+    room.impState.round = 1;
+    await startImposteurRound(currentRoom);
+  });
+
+  socket.on('submitImpWord', (word) => {
+    const room = rooms[currentRoom];
+    if (!room || room.state !== 'PLAYING') return;
+    
+    const activePlayerId = room.impState.turnOrder[room.impState.currentTurnIdx];
+    if (socket.id !== activePlayerId) return;
+
+    const pokeName = normalizeString(room.impState.secretPoke.name);
+    const submittedWord = normalizeString(word);
+
+    if (submittedWord.includes(pokeName) || (pokeName.includes(submittedWord) && submittedWord.length > 3)) {
+      room.impState.timeLeft = Math.floor(room.impState.timeLeft / 2);
+      socket.emit('impWordRejected', { msg: "Mot interdit ou trop proche du nom !", timeLeft: room.impState.timeLeft });
+      if (room.impState.timeLeft <= 0) {
+        clearInterval(room.impState.timer);
+        handleAutoWord(currentRoom, activePlayerId);
+      }
+      return;
+    }
+
+    clearInterval(room.impState.timer);
+    acceptWordAndNextTurn(currentRoom, activePlayerId, word, false);
+  });
+
+  socket.on('submitImpVote', (suspectId) => {
+    const room = rooms[currentRoom];
+    if (!room || room.state !== 'VOTING') return;
+    
+    room.impState.votes[socket.id] = suspectId;
+    const totalPlayers = Object.keys(room.players).filter(id => room.players[id].connected).length;
+    if (Object.keys(room.impState.votes).length >= totalPlayers) {
+      resolveVoting(currentRoom);
+    }
+  });
+
+  socket.on('submitImpCounterAttack', (guess) => {
+    const room = rooms[currentRoom];
+    if (!room || room.state !== 'COUNTER_ATTACK' || socket.id !== room.impState.imposteurId) return;
+    
+    clearTimeout(room.impState.timer);
+    const pokeName = normalizeString(room.impState.secretPoke.name);
+    const theGuess = normalizeString(guess);
+    const success = (pokeName === theGuess);
+    finishImposteurRound(currentRoom, success, guess);
+  });
 });
 
 async function startNextAuction(roomCode) {
@@ -480,7 +530,6 @@ function resolveTurn(roomCode) {
   sendBattleUpdate(roomCode, log);
 }
 
-// === L'UPDATE CLÉ EST ICI : On renvoie "players: room.players" pour que les panneaux latéraux se mettent à jour ! ===
 function sendBattleUpdate(roomCode, logMsg) {
   const room = rooms[roomCode];
   const b = room.battleState;
@@ -491,6 +540,160 @@ function sendBattleUpdateToSocket(socketId, roomCode, logMsg) {
   const room = rooms[roomCode];
   const b = room.battleState;
   io.to(socketId).emit('battleUpdate', { battle: b, players: room.players, log: logMsg, gameState: room.state });
+}
+
+// CORRECTION MINEURE : Sécurité anti-crash pour l'API Pokémon ajoutée ici
+async function startImposteurRound(roomCode) {
+  const room = rooms[roomCode];
+  room.state = 'PLAYING';
+  
+  let poke = await getRandomPokemon();
+  let failSafe = 0;
+  while(!poke && failSafe < 5) {
+    poke = await getRandomPokemon();
+    failSafe++;
+  }
+  
+  if (!poke) {
+    io.to(roomCode).emit('errorMsg', "Erreur de connexion à l'API Pokémon. Veuillez relancer la partie.");
+    room.state = 'LOBBY';
+    return;
+  }
+  
+  room.impState.secretPoke = poke;
+  room.impState.wordsLog = [];
+  room.impState.votes = {};
+  room.impState.currentWordLap = 1;
+
+  const playerIds = Object.keys(room.players).filter(id => room.players[id].connected);
+  room.impState.turnOrder = playerIds.sort(() => Math.random() - 0.5);
+  room.impState.currentTurnIdx = 0;
+  room.impState.imposteurId = playerIds[Math.floor(Math.random() * playerIds.length)];
+
+  playerIds.forEach(id => {
+    const isImp = (id === room.impState.imposteurId);
+    io.to(id).emit('impRoundStarted', {
+      isImposteur: isImp,
+      pokemon: isImp ? null : { name: poke.name, sprite: poke.sprite },
+      turnOrder: room.impState.turnOrder,
+      players: room.players
+    });
+  });
+
+  startImposteurTurn(roomCode);
+}
+
+function startImposteurTurn(roomCode) {
+  const room = rooms[roomCode];
+  if (!room) return;
+  
+  const activePlayerId = room.impState.turnOrder[room.impState.currentTurnIdx];
+  room.impState.timeLeft = 60;
+  
+  io.to(roomCode).emit('impNewTurn', { activePlayerId, timeLeft: 60, lap: room.impState.currentWordLap });
+
+  if (room.impState.timer) clearInterval(room.impState.timer);
+  room.impState.timer = setInterval(() => {
+    room.impState.timeLeft--;
+    io.to(roomCode).emit('impTimerUpdate', room.impState.timeLeft);
+    
+    if (room.impState.timeLeft <= 0) {
+      clearInterval(room.impState.timer);
+      handleAutoWord(roomCode, activePlayerId);
+    }
+  }, 1000);
+}
+
+function handleAutoWord(roomCode, playerId) {
+  const room = rooms[roomCode];
+  const p = room.impState.secretPoke;
+  const hints = [`Type: ${p.types}`, `Couleur: ${p.color}`, `Taille: ${p.height/10}m`, `Poids: ${p.weight/10}kg`];
+  const randomHint = hints[Math.floor(Math.random() * hints.length)] + " (Auto)";
+  acceptWordAndNextTurn(roomCode, playerId, randomHint, true);
+}
+
+function acceptWordAndNextTurn(roomCode, playerId, word, isAuto) {
+  const room = rooms[roomCode];
+  room.impState.wordsLog.push({ playerId, word, isAuto });
+  io.to(roomCode).emit('impWordAccepted', { playerId, word, isAuto, log: room.impState.wordsLog });
+
+  room.impState.currentTurnIdx++;
+  
+  if (room.impState.currentTurnIdx >= room.impState.turnOrder.length) {
+    room.impState.currentTurnIdx = 0;
+    room.impState.currentWordLap++;
+    
+    if (room.impState.currentWordLap > room.impSettings.wordsPerPlayer) {
+      return startImposteurVoting(roomCode);
+    }
+  }
+  
+  setTimeout(() => startImposteurTurn(roomCode), 2000);
+}
+
+function startImposteurVoting(roomCode) {
+  const room = rooms[roomCode];
+  room.state = 'VOTING';
+  io.to(roomCode).emit('impStartVoting', { log: room.impState.wordsLog });
+}
+
+function resolveVoting(roomCode) {
+  const room = rooms[roomCode];
+  room.state = 'RESOLUTION';
+  
+  const counts = {};
+  Object.values(room.impState.votes).forEach(id => counts[id] = (counts[id] || 0) + 1);
+  
+  let accusedId = null;
+  let maxVotes = 0;
+  for (const [id, count] of Object.entries(counts)) {
+    if (count > maxVotes) { maxVotes = count; accusedId = id; }
+  }
+
+  const impId = room.impState.imposteurId;
+  const imposteurCaught = (accusedId === impId);
+
+  io.to(roomCode).emit('impVoteResult', { votes: room.impState.votes, accusedId, imposteurCaught, realImposteurId: impId });
+
+  if (imposteurCaught) {
+    room.state = 'COUNTER_ATTACK';
+    io.to(roomCode).emit('impCounterAttackPhase', { imposteurId: impId });
+    room.impState.timer = setTimeout(() => { finishImposteurRound(roomCode, false); }, 45000);
+  } else {
+    finishImposteurRound(roomCode, false);
+  }
+}
+
+function finishImposteurRound(roomCode, counterAttackSuccess, guess = null) {
+  const room = rooms[roomCode];
+  room.state = 'ROUND_END';
+  
+  let winners = [];
+  const impId = room.impState.imposteurId;
+
+  if (room.state === 'RESOLUTION' || (room.state === 'ROUND_END' && !counterAttackSuccess)) {
+    if (counterAttackSuccess) {
+      winners = [impId]; 
+    } else if (guess !== null) {
+      winners = Object.keys(room.players).filter(id => id !== impId); 
+    } else {
+      winners = [impId]; 
+    }
+  }
+
+  winners.forEach(id => { if (room.players[id]) room.players[id].score++; });
+
+  io.to(roomCode).emit('impRoundEnd', { secretPoke: room.impState.secretPoke, winners, scores: room.players, guess });
+
+  setTimeout(() => {
+    if (room.impState.round < room.impSettings.maxRounds) {
+      room.impState.round++;
+      startImposteurRound(roomCode);
+    } else {
+      room.state = 'LOBBY';
+      io.to(roomCode).emit('impGameOver', { scores: room.players });
+    }
+  }, 10000);
 }
 
 server.listen(process.env.PORT || 3000, () => console.log('Poké Game Center V10 Actif !'));

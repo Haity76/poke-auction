@@ -7,13 +7,12 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
   <style>
-    /* THEME IMPOSTEUR (SOMBRE & NEON ROUGE/VIOLET) */
     :root { 
       --font-main: 'Rajdhani', sans-serif;
       --bg: radial-gradient(circle at 50% 50%, #1e1b4b, #020617);
       --glass-bg: rgba(15, 23, 42, 0.7);
       --glass-border: rgba(255, 255, 255, 0.15);
-      --accent: #f43f5e; /* Rose fluo "Suspect" */
+      --accent: #f43f5e;
       --glow: 0 0 20px rgba(244, 63, 94, 0.6);
       --text: #f8fafc;
     }
@@ -23,7 +22,8 @@
 
     header { padding: 10px; text-align: center; background: var(--glass-bg); border-bottom: 1px solid var(--glass-border); flex-shrink: 0; backdrop-filter: blur(10px); display: flex; justify-content: space-between; align-items: center;}
     h1 { margin: 0; font-size: 1.5em; color: var(--accent); letter-spacing: 2px; text-shadow: var(--glow); text-transform: uppercase;}
-    .home-btn { background: transparent; border: 1px solid var(--accent); color: var(--text); padding: 5px 15px; border-radius: 12px; cursor: pointer; text-decoration: none; font-weight: bold; }
+    .home-btn { background: transparent; border: 1px solid var(--accent); color: var(--text); padding: 5px 15px; border-radius: 12px; cursor: pointer; font-weight: bold; }
+    .home-btn:hover { background: var(--accent); color: #000; }
 
     .main-layout { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; overflow-y: auto; }
     
@@ -31,24 +31,21 @@
 
     .btn { background: transparent; border: 2px solid var(--accent); color: var(--text); font-family: var(--font-main); font-weight: bold; padding: 10px 25px; border-radius: 30px; cursor: pointer; font-size: 1.2em; text-transform: uppercase; transition: all 0.2s; box-shadow: var(--glow); }
     .btn:hover { background: var(--accent); color: #000; }
-    .btn:disabled { border-color: #475569; color: #475569; box-shadow: none; cursor: not-allowed; }
+    .btn:disabled { border-color: #475569; color: #475569; box-shadow: none; cursor: not-allowed; background: transparent; }
 
     input, select { padding: 12px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: var(--text); text-align: center; margin: 10px; font-size: 1.1em; font-family: var(--font-main); }
     input:focus { outline: none; border-color: var(--accent); box-shadow: var(--glow); }
 
-    /* LOBBY AVATARS */
     .player-list { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin: 20px 0; }
     .player-chip { display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 12px; border: 1px solid var(--glass-border); min-width: 90px;}
     .player-chip img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #cbd5e1; object-fit: cover; margin-bottom: 8px;}
     .is-host { color: #eab308; font-size: 0.8em; }
 
-    /* JEU ACTIF */
     #targetInfo { background: rgba(0,0,0,0.4); border: 1px dashed var(--accent); border-radius: 12px; padding: 15px; margin-bottom: 20px; }
     #targetInfo img { height: 100px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
     .imposteur-alert { color: #f43f5e; font-size: 2em; font-weight: bold; text-shadow: 0 0 20px #f43f5e; animation: pulse 1.5s infinite;}
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-    /* TOUR DE PAROLE */
     .turn-indicator { font-size: 1.5em; font-weight: bold; margin: 15px 0; }
     #timerDisplay { font-size: 2.5em; font-weight: bold; color: var(--accent); text-shadow: var(--glow); }
     
@@ -58,7 +55,6 @@
     .log-entry img { width: 35px; height: 35px; border-radius: 50%; }
     .auto-word { color: #94a3b8; font-style: italic; font-size: 0.9em; }
 
-    /* ÉCRAN DE VOTE */
     .vote-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 20px; }
     .vote-card { background: rgba(0,0,0,0.4); border: 2px solid var(--glass-border); padding: 15px; border-radius: 12px; cursor: pointer; transition: 0.2s; }
     .vote-card:hover { border-color: var(--accent); box-shadow: var(--glow); transform: scale(1.05); }
@@ -73,12 +69,12 @@
 
   <header>
     <h1>L'Imposteur</h1>
-    <a href="index.html" class="home-btn" onclick="socket.emit('leaveRoom')">🏠 Hub</a>
+    <!-- CORRECTION : Remplacement par une vraie fonction JS -->
+    <button class="home-btn" onclick="goToHub()">🏠 Hub</button>
   </header>
 
   <div class="main-layout">
     
-    <!-- LOBBY & RECHERCHE -->
     <div id="lobbyZone" class="glass-panel">
       <h2>Rejoindre une Partie</h2>
       <input type="text" id="usernameInput" placeholder="Votre Pseudo" value="Enquêteur">
@@ -89,23 +85,21 @@
       <button class="btn" onclick="joinRoom()">Rejoindre</button>
     </div>
 
-    <!-- SALON D'ATTENTE -->
     <div id="waitingZone" class="glass-panel hidden">
       <h2>Code : <span id="displayRoomCode" style="color: var(--accent);"></span></h2>
       
-      <!-- Options de l'Hôte -->
       <div id="hostControls" class="hidden" style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; margin: 15px 0;">
         <h3>Paramètres de la partie</h3>
         <label>Manches : <select id="selRounds" onchange="updateSettings()"><option value="1">1 Manche</option><option value="3">3 Manches</option><option value="5">5 Manches</option></select></label>
-        <label>Mots/Joueur : <select id="selWords" onchange="updateSettings()"><option value="1">1 Mot</option><option value="2">2 Mots</option><option value="3">3 Mots</option></select></label>
+        <label>Mots/Joueur : <select id="selWords" onchange="updateSettings()"><option value="1">1 Mot</option><option value="2" selected>2 Mots</option><option value="3">3 Mots</option></select></label>
       </div>
 
       <div id="playerList" class="player-list"></div>
-      <button id="startBtn" class="btn hidden" onclick="socket.emit('startImposteurGame')">Démarrer (Min 3)</button>
+      <!-- CORRECTION : Lancement via une vraie fonction pour éviter l'erreur de socket -->
+      <button id="startBtn" class="btn hidden" onclick="launchGame()">Démarrer (Min 3)</button>
       <p id="waitText">En attente du créateur...</p>
     </div>
 
-    <!-- PHASE DE JEU (MOTS) -->
     <div id="gameZone" class="glass-panel hidden">
       <div id="targetInfo">
         <h3 id="roleTitle">Votre Cible</h3>
@@ -131,7 +125,6 @@
       <div id="chatLog" class="word-log"></div>
     </div>
 
-    <!-- PHASE DE VOTE -->
     <div id="votingZone" class="glass-panel hidden">
       <h2 style="color: #ef4444;">Le Tribunal</h2>
       <p>Qui est l'imposteur selon vous ?</p>
@@ -139,7 +132,6 @@
       <button class="btn" id="confirmVoteBtn" style="margin-top:20px;" onclick="confirmVote()" disabled>Voter</button>
     </div>
 
-    <!-- CONTRE-ATTAQUE -->
     <div id="counterAttackZone" class="glass-panel hidden">
       <h2 style="color: var(--accent);">L'Imposteur riposte !</h2>
       <p>L'imposteur a été démasqué... mais il peut voler la victoire s'il devine le Pokémon !</p>
@@ -152,7 +144,6 @@
       </div>
     </div>
 
-    <!-- FIN DE MANCHE / SCORES -->
     <div id="roundEndZone" class="glass-panel hidden">
       <h2 id="endRoundTitle">Résultat</h2>
       <img id="revealSprite" src="" style="height: 120px;">
@@ -175,12 +166,22 @@
     let playersData = {};
     let selectedSuspectId = null;
     
-    // Récupération Avatar par défaut
     const localName = localStorage.getItem('pokeauc_username');
     if (localName) document.getElementById('usernameInput').value = localName;
     const defaultAvatar = localStorage.getItem('pokeauc_avatar') || "https://play.pokemonshowdown.com/sprites/trainers/red.png";
 
     socket.on('connect', () => { myId = socket.id; });
+
+    // --- CORRECTIONS DES BOUTONS ---
+    function goToHub() {
+      socket.emit('leaveRoom');
+      window.location.href = 'index.html';
+    }
+
+    function launchGame() {
+      socket.emit('startImposteurGame');
+    }
+    // -------------------------------
 
     function switchZone(id) {
       ['lobbyZone', 'waitingZone', 'gameZone', 'votingZone', 'counterAttackZone', 'roundEndZone'].forEach(z => document.getElementById(z).classList.add('hidden'));
@@ -201,6 +202,8 @@
         socket.emit('joinRoom', { roomCode: code, name, avatar: defaultAvatar });
       }
     }
+
+    socket.on('errorMsg', (msg) => { alert(msg); });
 
     socket.on('roomCreated', (data) => { isHost = true; document.getElementById('hostControls').classList.remove('hidden'); document.getElementById('startBtn').classList.remove('hidden'); document.getElementById('waitText').classList.add('hidden'); switchZone('waitingZone'); document.getElementById('displayRoomCode').innerText = data.roomCode; });
     socket.on('roomJoined', (data) => { switchZone('waitingZone'); document.getElementById('displayRoomCode').innerText = data.roomCode; });
@@ -236,7 +239,6 @@
       }
     });
 
-    // --- PHASE DE JEU (MOTS) ---
     socket.on('impRoundStarted', (data) => {
       playersData = data.players;
       switchZone('gameZone');
@@ -280,7 +282,6 @@
       if (w) socket.emit('submitImpWord', w);
     }
 
-    // ANTI-TRICHE UI
     socket.on('impWordRejected', (data) => {
       const input = document.getElementById('wordInput');
       input.classList.add('shake-red');
@@ -304,7 +305,6 @@
       logZone.scrollTop = logZone.scrollHeight;
     });
 
-    // --- PHASE DE VOTE ---
     socket.on('impStartVoting', () => {
       switchZone('votingZone');
       selectedSuspectId = null;
@@ -334,7 +334,6 @@
       }
     }
 
-    // --- CONTRE-ATTAQUE ---
     socket.on('impCounterAttackPhase', (data) => {
       switchZone('counterAttackZone');
       const isMeImp = (myId === data.imposteurId);
@@ -347,15 +346,12 @@
       if(guess) socket.emit('submitImpCounterAttack', guess);
     }
 
-    // --- RÉSULTATS ---
     socket.on('impRoundEnd', (data) => {
       switchZone('roundEndZone');
       
       document.getElementById('revealSprite').src = data.secretPoke.sprite;
       document.getElementById('revealName').innerText = data.secretPoke.name;
 
-      const isImpWin = data.winners.length === 1 && data.winners[0] === data.realImposteurId; // Fallback check if needed
-      // Actually we just check if myId is in winners
       const iWon = data.winners.includes(myId);
 
       document.getElementById('endRoundTitle').innerText = iWon ? "VICTOIRE !" : "DÉFAITE...";
@@ -365,7 +361,6 @@
       if (data.guess) desc = `L'Imposteur a tenté de deviner : <strong>${data.guess}</strong>.<br>`;
       document.getElementById('endRoundDesc').innerHTML = desc;
 
-      // MAJ Scores
       playersData = data.scores;
       const sorted = Object.values(playersData).sort((a,b) => b.score - a.score);
       document.getElementById('scoreBoard').innerHTML = sorted.map(p => `
@@ -377,8 +372,7 @@
     });
 
     socket.on('impGameOver', (data) => {
-      // Afficher un bouton retour au lobby après 5 sec par ex.
-      setTimeout(() => switchZone('waitingZone'), 6000);
+      setTimeout(() => { switchZone('waitingZone'); document.getElementById('startBtn').innerText = "Rejouer"; }, 6000);
     });
 
   </script>
