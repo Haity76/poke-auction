@@ -322,7 +322,11 @@
       if (code) { playMusic('lobby'); socket.emit('joinRoom', { roomCode: code, name: myName, avatar: myAvatarUrl }); }
     }
     
-    function goToHub() { socket.emit('leaveRoom'); window.location.href = 'index.html'; }
+    function goToHub() { 
+      socket.emit('leaveRoom'); 
+      // Renvoie au Hub en donnant une récompense de 50 XP pour avoir joué !
+      window.location.href = 'index.html?game_xp=50'; 
+    }
 
     socket.on('playerDisconnectedCount', (data) => {
       document.getElementById('disconnectOverlay').classList.remove('hidden');

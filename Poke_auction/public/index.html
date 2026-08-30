@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pokémon Game Center</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root { 
@@ -14,37 +15,76 @@
       --glow: 0 0 15px rgba(56, 189, 248, 0.5);
     }
 
-    body { font-family: var(--font-main); background: radial-gradient(circle at 50% 50%, #1e293b, #020617); color: #fff; margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    body { font-family: var(--font-main); background: radial-gradient(circle at 50% 50%, #1e293b, #020617); color: #fff; margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; overflow-x: hidden; }
     
-    header { position: absolute; top: 0; left: 0; right: 0; padding: 15px 30px; display: flex; justify-content: flex-end; align-items: center; }
+    header { width: 100%; padding: 15px 30px; display: flex; justify-content: flex-end; align-items: center; box-sizing: border-box;}
     
     /* BOUTON PROFIL */
     .profile-btn { background: var(--glass-bg); border: 1px solid var(--accent); color: #fff; display: flex; align-items: center; gap: 10px; padding: 8px 15px; border-radius: 30px; cursor: pointer; backdrop-filter: blur(10px); transition: 0.2s; font-family: var(--font-main); font-weight: bold; font-size: 1.1em;}
     .profile-btn:hover { box-shadow: var(--glow); transform: scale(1.05); }
     .profile-btn img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
 
-    h1 { font-size: 3em; text-transform: uppercase; letter-spacing: 3px; text-shadow: var(--glow); color: var(--accent); margin-top: 60px; margin-bottom: 20px; text-align: center;}
+    h1 { font-size: 2.8em; text-transform: uppercase; letter-spacing: 3px; text-shadow: var(--glow); color: var(--accent); margin: 10px 0 20px 0; text-align: center;}
 
-    .game-grid { display: flex; gap: 25px; flex-wrap: wrap; justify-content: center; max-width: 1000px; padding: 20px; }
+    /* ZONE TAMAGOTCHI */
+    .tamagotchi-panel { background: rgba(0, 0, 0, 0.4); border: 2px solid var(--accent); border-radius: 20px; padding: 20px; width: 90%; max-width: 500px; display: flex; flex-direction: column; align-items: center; position: relative; box-shadow: inset 0 0 30px rgba(56, 189, 248, 0.2); margin-bottom: 30px; }
+    
+    .tama-sprite-container { position: relative; width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; cursor: pointer; }
+    .tama-sprite { max-width: 130px; max-height: 130px; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5)); transition: transform 0.1s; animation: float 3s ease-in-out infinite; }
+    .tama-sprite:active { transform: scale(0.9); }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-    .game-card { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 30px; width: 280px; text-align: center; transition: all 0.3s ease; cursor: pointer; text-decoration: none; color: #fff; display: flex; flex-direction: column; align-items: center; }
+    .tama-info { text-align: center; width: 100%; }
+    .tama-name-row { display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 1.8em; font-weight: bold; margin-bottom: 5px; }
+    .edit-icon { font-size: 0.6em; cursor: pointer; opacity: 0.7; transition: 0.2s; }
+    .edit-icon:hover { opacity: 1; color: var(--accent); }
+    
+    .tama-lvl { font-size: 1.2em; color: var(--accent); font-weight: bold; margin-bottom: 10px; }
+    
+    .xp-bar-bg { width: 100%; background: #334155; height: 12px; border-radius: 6px; overflow: hidden; border: 1px solid var(--glass-border); position: relative; }
+    .xp-bar-fill { height: 100%; background: linear-gradient(90deg, #38bdf8, #818cf8); width: 0%; transition: width 0.4s ease-out; box-shadow: 0 0 10px rgba(56, 189, 248, 0.8); }
+    .xp-text { font-size: 0.85em; opacity: 0.8; margin-top: 5px; display: block; }
+
+    .click-fx { position: absolute; color: #22c55e; font-weight: bold; font-size: 1.5em; text-shadow: 1px 1px 0 #000; pointer-events: none; animation: floatUpXP 1s forwards; z-index: 10;}
+    @keyframes floatUpXP { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-40px) scale(1.2); } }
+
+    /* GRILLE DES JEUX */
+    .game-grid { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; max-width: 1000px; padding: 10px; width: 100%; }
+    .game-card { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 25px; width: 280px; text-align: center; transition: all 0.3s ease; cursor: pointer; text-decoration: none; color: #fff; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; }
     .game-card:hover { transform: translateY(-10px); box-shadow: var(--glow); border-color: var(--accent); }
     .game-card h2 { margin: 10px 0; font-size: 1.8em; color: var(--accent); }
-    .game-card p { font-size: 1.1em; opacity: 0.8; line-height: 1.4; }
-    .icon { font-size: 4em; margin-bottom: 10px; }
+    .game-card p { font-size: 1.1em; opacity: 0.8; line-height: 1.4; margin: 0; }
+    .icon { font-size: 3.5em; margin-bottom: 10px; }
 
-    /* MODAL PROFIL */
-    #profileModal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+    /* MODALS COMMUNS */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
     .modal-content { background: var(--glass-bg); border: 1px solid var(--accent); padding: 30px; border-radius: 16px; text-align: center; max-width: 500px; width: 90%; box-shadow: var(--glow); }
-    .avatar-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 15px 0; max-height: 250px; overflow-y: auto; padding: 10px; border: 1px inset rgba(255,255,255,0.2); border-radius: 12px; background: rgba(0,0,0,0.4); }
+    .hidden { display: none !important; }
+    
+    .btn { background: var(--accent); color: #000; border: none; padding: 10px 25px; border-radius: 30px; font-weight: bold; font-family: var(--font-main); font-size: 1.2em; cursor: pointer; transition: 0.2s; margin-top: 15px;}
+    .btn:hover { transform: scale(1.05); }
+    input { padding: 12px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: #fff; text-align: center; font-size: 1.2em; font-family: var(--font-main); width: 80%; margin-bottom: 15px;}
+
+    /* GRILLE STARTERS */
+    .starter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 350px; overflow-y: auto; padding: 10px; border: 1px inset rgba(255,255,255,0.2); border-radius: 12px; background: rgba(0,0,0,0.4); margin-bottom: 15px; }
+    .starter-grid::-webkit-scrollbar { width: 6px; }
+    .starter-grid::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+    .starter-option { display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 10px; border: 2px solid transparent; border-radius: 12px; transition: 0.2s; }
+    .starter-option:hover { background: rgba(255,255,255,0.1); }
+    .starter-option.selected { border-color: var(--accent); background: rgba(56, 189, 248, 0.2); transform: scale(1.05); }
+    .starter-option img { width: 60px; height: 60px; object-fit: contain; }
+
+    /* PROFIL AVATARS */
+    .avatar-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 15px 0; max-height: 200px; overflow-y: auto; padding: 10px; border: 1px inset rgba(255,255,255,0.2); border-radius: 12px; background: rgba(0,0,0,0.4); }
     .avatar-grid::-webkit-scrollbar { width: 6px; }
     .avatar-grid::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
     .avatar-option { width: 60px; height: 60px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; padding: 2px; object-fit: cover; transition: all 0.2s; }
     .avatar-option.selected { border-color: var(--accent); transform: scale(1.1); box-shadow: var(--glow); }
-    input { padding: 12px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: #fff; text-align: center; font-size: 1.2em; font-family: var(--font-main); width: 80%; margin-bottom: 15px;}
-    .btn { background: var(--accent); color: #000; border: none; padding: 10px 25px; border-radius: 30px; font-weight: bold; font-family: var(--font-main); font-size: 1.2em; cursor: pointer; transition: 0.2s; }
-    .btn:hover { transform: scale(1.05); }
-    .hidden { display: none !important; }
+
+    /* NOTIFICATION XP JEU */
+    .xp-notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #22c55e; color: #000; padding: 15px 25px; border-radius: 12px; font-weight: bold; font-size: 1.2em; z-index: 2000; box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: slideDown 0.5s ease-out, fadeOut 0.5s ease-out 3.5s forwards; border: 2px solid #fff;}
+    @keyframes slideDown { 0% { top: -50px; opacity: 0; } 100% { top: 20px; opacity: 1; } }
+    @keyframes fadeOut { 0% { opacity: 1; } 100% { opacity: 0; display: none; } }
   </style>
 </head>
 <body>
@@ -56,7 +96,25 @@
     </div>
   </header>
 
-  <h1>Poké Game Center</h1>
+  <div id="xpAlertZone"></div>
+
+  <!-- LE TAMAGOTCHI -->
+  <div class="tamagotchi-panel" id="tamaPanel">
+    <div class="tama-sprite-container" onclick="clickTama(event)">
+      <img id="tamaSprite" class="tama-sprite" src="">
+    </div>
+    <div class="tama-info">
+      <div class="tama-name-row">
+        <span id="tamaName">Mon Compagnon</span>
+        <span class="edit-icon" onclick="openRenameModal()">✏️</span>
+      </div>
+      <div class="tama-lvl" id="tamaLvlDisplay">Niveau 1</div>
+      <div class="xp-bar-bg">
+        <div class="xp-bar-fill" id="tamaXpFill"></div>
+      </div>
+      <span class="xp-text" id="tamaXpText">0 / 100 XP</span>
+    </div>
+  </div>
 
   <div class="game-grid">
     <a href="pokeauc.html" class="game-card">
@@ -73,10 +131,33 @@
     </a>
   </div>
 
-  <!-- MODAL PROFIL -->
-  <div id="profileModal" class="hidden">
+  <!-- MODAL SELECTION STARTER -->
+  <div id="starterModal" class="modal-overlay hidden">
     <div class="modal-content">
-      <h2 style="color: var(--accent); margin-top: 0;">Personnaliser le Profil</h2>
+      <h2 style="color: var(--accent); margin-top: 0;">Choisis ton Starter !</h2>
+      <p>Il gagnera de l'XP à chaque fois que tu joueras à un jeu.</p>
+      <div class="starter-grid" id="starterSelectionGrid"></div>
+      <input type="text" id="initialTamaName" placeholder="Donne-lui un surnom..." maxlength="15">
+      <br>
+      <button class="btn" onclick="confirmStarter()">Commencer l'Aventure</button>
+    </div>
+  </div>
+
+  <!-- MODAL RENAME -->
+  <div id="renameModal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 400px;">
+      <h2 style="color: var(--accent); margin-top: 0;">Renommer</h2>
+      <input type="text" id="newTamaName" placeholder="Nouveau surnom..." maxlength="15">
+      <br>
+      <button class="btn" onclick="saveNewTamaName()">Valider</button>
+      <button class="btn" style="background: transparent; color: #fff; border: 1px solid #fff;" onclick="document.getElementById('renameModal').classList.add('hidden')">Annuler</button>
+    </div>
+  </div>
+
+  <!-- MODAL PROFIL (DRESSEUR) -->
+  <div id="profileModal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h2 style="color: var(--accent); margin-top: 0;">Profil Dresseur</h2>
       <input type="text" id="profileName" placeholder="Votre Pseudo" maxlength="15">
       <div class="avatar-grid" id="avatarSelection">
         <img src="https://play.pokemonshowdown.com/sprites/trainers/red.png" class="avatar-option selected" onclick="selectAvatar(this)">
@@ -103,41 +184,180 @@
   </div>
 
   <script>
+    // --- GESTION DU PROFIL DRESSEUR ---
     let tempAvatarUrl = "https://play.pokemonshowdown.com/sprites/trainers/red.png";
 
-    window.onload = () => {
+    function initProfile() {
       const savedName = localStorage.getItem('pokeauc_username') || "Dresseur";
       const savedAvatar = localStorage.getItem('pokeauc_avatar') || "https://play.pokemonshowdown.com/sprites/trainers/red.png";
       document.getElementById('hubUsername').innerText = savedName;
       document.getElementById('hubAvatar').src = savedAvatar;
-    };
+    }
 
     function openProfile() {
       document.getElementById('profileModal').classList.remove('hidden');
       document.getElementById('profileName').value = localStorage.getItem('pokeauc_username') || "Dresseur";
       tempAvatarUrl = localStorage.getItem('pokeauc_avatar') || "https://play.pokemonshowdown.com/sprites/trainers/red.png";
-      
       document.querySelectorAll('.avatar-option').forEach(img => {
         img.classList.remove('selected');
         if (img.src === tempAvatarUrl) img.classList.add('selected');
       });
     }
 
-    function selectAvatar(el) {
-      document.querySelectorAll('.avatar-option').forEach(img => img.classList.remove('selected'));
-      el.classList.add('selected');
-      tempAvatarUrl = el.src;
-    }
-
+    function selectAvatar(el) { document.querySelectorAll('.avatar-option').forEach(img => img.classList.remove('selected')); el.classList.add('selected'); tempAvatarUrl = el.src; }
     function saveProfile() {
       const name = document.getElementById('profileName').value.trim() || "Dresseur";
-      localStorage.setItem('pokeauc_username', name);
-      localStorage.setItem('pokeauc_avatar', tempAvatarUrl);
-      
-      document.getElementById('hubUsername').innerText = name;
-      document.getElementById('hubAvatar').src = tempAvatarUrl;
+      localStorage.setItem('pokeauc_username', name); localStorage.setItem('pokeauc_avatar', tempAvatarUrl);
+      initProfile();
       document.getElementById('profileModal').classList.add('hidden');
     }
+
+    // --- MOTEUR DU TAMAGOTCHI ---
+    const STARTERS_BASE = [
+      { id: 1, name: "Bulbizarre" }, { id: 4, name: "Salamèche" }, { id: 7, name: "Carapuce" },
+      { id: 152, name: "Germignon" }, { id: 155, name: "Héricendre" }, { id: 158, name: "Kaiminus" },
+      { id: 252, name: "Arcko" }, { id: 255, name: "Poussifeu" }, { id: 258, name: "Gobou" },
+      { id: 387, name: "Tortipouss" }, { id: 390, name: "Ouisticram" }, { id: 393, name: "Tiplouf" },
+      { id: 495, name: "Vipélierre" }, { id: 498, name: "Gruikui" }, { id: 501, name: "Moustillon" },
+      { id: 650, name: "Marisson" }, { id: 653, name: "Feunnec" }, { id: 656, name: "Grenousse" },
+      { id: 722, name: "Brindibou" }, { id: 725, name: "Flamiaou" }, { id: 728, name: "Otaquin" },
+      { id: 810, name: "Ouistempo" }, { id: 813, name: "Flambino" }, { id: 816, name: "Larméléon" },
+      { id: 906, name: "Poussacha" }, { id: 909, name: "Chochodile" }, { id: 912, name: "Coiffeton" }
+    ];
+
+    let tamaState = { baseId: null, name: "", xp: 0 };
+    let tempSelectedStarter = null;
+    let clickCooldown = false;
+
+    function initTamagotchi() {
+      const savedData = localStorage.getItem('pokeauc_tamagotchi');
+      if (!savedData) {
+        document.getElementById('tamaPanel').classList.add('hidden');
+        showStarterSelection();
+      } else {
+        tamaState = JSON.parse(savedData);
+        document.getElementById('tamaPanel').classList.remove('hidden');
+        updateTamaUI();
+        checkGameXP(); // Vérifie s'il y a des XP en attente de la part des jeux !
+      }
+    }
+
+    function showStarterSelection() {
+      document.getElementById('starterModal').classList.remove('hidden');
+      const grid = document.getElementById('starterSelectionGrid');
+      grid.innerHTML = STARTERS_BASE.map(s => `
+        <div class="starter-option" id="st-${s.id}" onclick="selectStarter(${s.id}, '${s.name}')">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${s.id}.png">
+          <small>${s.name}</small>
+        </div>
+      `).join('');
+    }
+
+    function selectStarter(id, name) {
+      document.querySelectorAll('.starter-option').forEach(el => el.classList.remove('selected'));
+      document.getElementById(`st-${id}`).classList.add('selected');
+      tempSelectedStarter = { id, name };
+      document.getElementById('initialTamaName').value = name;
+    }
+
+    function confirmStarter() {
+      if (!tempSelectedStarter) return alert("Choisis un Pokémon !");
+      const chosenName = document.getElementById('initialTamaName').value.trim() || tempSelectedStarter.name;
+      tamaState = { baseId: tempSelectedStarter.id, name: chosenName, xp: 0 };
+      saveTama();
+      
+      document.getElementById('starterModal').classList.add('hidden');
+      document.getElementById('tamaPanel').classList.remove('hidden');
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      updateTamaUI();
+    }
+
+    function saveTama() { localStorage.setItem('pokeauc_tamagotchi', JSON.stringify(tamaState)); }
+
+    function getLevelData() {
+      // Courbe RPG : Lvl 1(0 XP), Lvl 16(225 XP), Lvl 36(1225 XP)
+      const level = Math.floor(Math.sqrt(tamaState.xp)) + 1;
+      let evoStage = 0;
+      if (level >= 36) evoStage = 2;
+      else if (level >= 16) evoStage = 1;
+      
+      const currentEvoId = tamaState.baseId + evoStage;
+      
+      const currentLevelBaseXp = Math.pow(level - 1, 2);
+      const nextLevelBaseXp = Math.pow(level, 2);
+      const xpInCurrentLevel = tamaState.xp - currentLevelBaseXp;
+      const xpNeededForLevel = nextLevelBaseXp - currentLevelBaseXp;
+      const progressPercent = (xpInCurrentLevel / xpNeededForLevel) * 100;
+
+      return { level, currentEvoId, xpInCurrentLevel, xpNeededForLevel, progressPercent, evoStage };
+    }
+
+    let lastEvoStage = -1;
+
+    function updateTamaUI() {
+      const data = getLevelData();
+      document.getElementById('tamaName').innerText = tamaState.name;
+      document.getElementById('tamaLvlDisplay').innerText = `Niveau ${data.level}`;
+      document.getElementById('tamaXpFill').style.width = `${data.progressPercent}%`;
+      document.getElementById('tamaXpText').innerText = `${data.xpInCurrentLevel} / ${data.xpNeededForLevel} XP`;
+      
+      const newSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${data.currentEvoId}.png`;
+      document.getElementById('tamaSprite').src = newSprite;
+
+      // Animation d'évolution !
+      if (lastEvoStage !== -1 && data.evoStage > lastEvoStage) {
+        confetti({ particleCount: 150, spread: 100, colors: ['#fbbf24', '#f59e0b', '#fff'] });
+        alert(`Incroyable ! ${tamaState.name} a évolué !`);
+      }
+      lastEvoStage = data.evoStage;
+    }
+
+    function clickTama(event) {
+      if(clickCooldown) return;
+      clickCooldown = true; setTimeout(() => clickCooldown = false, 150); // Anti Auto-clicker destructif
+
+      tamaState.xp += 1;
+      saveTama();
+      updateTamaUI();
+
+      // Effet visuel
+      const rect = document.getElementById('tamaSprite').getBoundingClientRect();
+      const fx = document.createElement('div');
+      fx.className = 'click-fx';
+      fx.innerHTML = '+1 XP <span style="color:#ef4444;">❤️</span>';
+      fx.style.left = `${(event.clientX - rect.left) + 20}px`;
+      fx.style.top = `${event.clientY - rect.top}px`;
+      document.querySelector('.tama-sprite-container').appendChild(fx);
+      setTimeout(() => fx.remove(), 1000);
+    }
+
+    function openRenameModal() { document.getElementById('renameModal').classList.remove('hidden'); document.getElementById('newTamaName').value = tamaState.name; }
+    function saveNewTamaName() {
+      const n = document.getElementById('newTamaName').value.trim();
+      if(n) { tamaState.name = n; saveTama(); updateTamaUI(); }
+      document.getElementById('renameModal').classList.add('hidden');
+    }
+
+    // --- RECEPTION DE L'XP DES MINI-JEUX ---
+    function checkGameXP() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const earnedXp = parseInt(urlParams.get('game_xp'));
+      
+      if (earnedXp && !isNaN(earnedXp)) {
+        // Enlève le paramètre de l'URL proprement pour éviter le farm en faisant F5
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        tamaState.xp += earnedXp;
+        saveTama();
+        updateTamaUI();
+        
+        const alertZone = document.getElementById('xpAlertZone');
+        alertZone.innerHTML = `<div class="xp-notification">🎉 ${tamaState.name} a gagné +${earnedXp} XP après ce match !</div>`;
+      }
+    }
+
+    // Démarrage global
+    window.onload = () => { initProfile(); initTamagotchi(); };
   </script>
 </body>
 </html>

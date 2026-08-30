@@ -220,7 +220,11 @@
     socket.on('connect', () => { myId = socket.id; });
     function setTheme(t) { document.body.className = t; }
 
-    function goToHub() { socket.emit('leaveRoom'); window.location.href = 'index.html'; }
+    function goToHub() { 
+      socket.emit('leaveRoom'); 
+      // Renvoie au Hub en donnant une récompense de 50 XP pour avoir joué !
+      window.location.href = 'index.html?game_xp=50'; 
+    }
     
     function launchGame() {
       const m = document.getElementById('selMode').value;
