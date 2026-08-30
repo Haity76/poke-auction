@@ -19,7 +19,6 @@
     
     header { width: 100%; padding: 15px 30px; display: flex; justify-content: flex-end; align-items: center; box-sizing: border-box;}
     
-    /* BOUTON PROFIL */
     .profile-btn { background: var(--glass-bg); border: 1px solid var(--accent); color: #fff; display: flex; align-items: center; gap: 10px; padding: 8px 15px; border-radius: 30px; cursor: pointer; backdrop-filter: blur(10px); transition: 0.2s; font-family: var(--font-main); font-weight: bold; font-size: 1.1em;}
     .profile-btn:hover { box-shadow: var(--glow); transform: scale(1.05); }
     .profile-btn img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
@@ -41,9 +40,14 @@
     
     .tama-lvl { font-size: 1.2em; color: var(--accent); font-weight: bold; margin-bottom: 10px; }
     
-    .xp-bar-bg { width: 100%; background: #334155; height: 12px; border-radius: 6px; overflow: hidden; border: 1px solid var(--glass-border); position: relative; }
+    .xp-bar-bg { width: 100%; background: #334155; height: 12px; border-radius: 6px; overflow: hidden; border: 1px solid var(--glass-border); position: relative; margin-bottom: 5px;}
     .xp-bar-fill { height: 100%; background: linear-gradient(90deg, #38bdf8, #818cf8); width: 0%; transition: width 0.4s ease-out; box-shadow: 0 0 10px rgba(56, 189, 248, 0.8); }
-    .xp-text { font-size: 0.85em; opacity: 0.8; margin-top: 5px; display: block; }
+    .xp-text { font-size: 0.85em; opacity: 0.8; }
+
+    /* NOUVEAU : LES LIMITES D'ÉNERGIE (QUOTA) */
+    .stamina-row { display: flex; justify-content: space-around; width: 100%; margin-top: 15px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.9em; font-weight: bold;}
+    .stamina-item { display: flex; flex-direction: column; align-items: center; gap: 2px;}
+    .stamina-item span { color: var(--accent); }
 
     .click-fx { position: absolute; color: #22c55e; font-weight: bold; font-size: 1.5em; text-shadow: 1px 1px 0 #000; pointer-events: none; animation: floatUpXP 1s forwards; z-index: 10;}
     @keyframes floatUpXP { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-40px) scale(1.2); } }
@@ -65,7 +69,7 @@
     .btn:hover { transform: scale(1.05); }
     input { padding: 12px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: #fff; text-align: center; font-size: 1.2em; font-family: var(--font-main); width: 80%; margin-bottom: 15px;}
 
-    /* GRILLE STARTERS */
+    /* GRILLE STARTERS & PROFIL */
     .starter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 350px; overflow-y: auto; padding: 10px; border: 1px inset rgba(255,255,255,0.2); border-radius: 12px; background: rgba(0,0,0,0.4); margin-bottom: 15px; }
     .starter-grid::-webkit-scrollbar { width: 6px; }
     .starter-grid::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
@@ -74,7 +78,6 @@
     .starter-option.selected { border-color: var(--accent); background: rgba(56, 189, 248, 0.2); transform: scale(1.05); }
     .starter-option img { width: 60px; height: 60px; object-fit: contain; }
 
-    /* PROFIL AVATARS */
     .avatar-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 15px 0; max-height: 200px; overflow-y: auto; padding: 10px; border: 1px inset rgba(255,255,255,0.2); border-radius: 12px; background: rgba(0,0,0,0.4); }
     .avatar-grid::-webkit-scrollbar { width: 6px; }
     .avatar-grid::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
@@ -82,7 +85,7 @@
     .avatar-option.selected { border-color: var(--accent); transform: scale(1.1); box-shadow: var(--glow); }
 
     /* NOTIFICATION XP JEU */
-    .xp-notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #22c55e; color: #000; padding: 15px 25px; border-radius: 12px; font-weight: bold; font-size: 1.2em; z-index: 2000; box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: slideDown 0.5s ease-out, fadeOut 0.5s ease-out 3.5s forwards; border: 2px solid #fff;}
+    .xp-notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #22c55e; color: #000; padding: 15px 25px; border-radius: 12px; font-weight: bold; font-size: 1.2em; z-index: 2000; box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: slideDown 0.5s ease-out, fadeOut 0.5s ease-out 3.5s forwards; border: 2px solid #fff; white-space: nowrap;}
     @keyframes slideDown { 0% { top: -50px; opacity: 0; } 100% { top: 20px; opacity: 1; } }
     @keyframes fadeOut { 0% { opacity: 1; } 100% { opacity: 0; display: none; } }
   </style>
@@ -109,10 +112,21 @@
         <span class="edit-icon" onclick="openRenameModal()">✏️</span>
       </div>
       <div class="tama-lvl" id="tamaLvlDisplay">Niveau 1</div>
-      <div class="xp-bar-bg">
-        <div class="xp-bar-fill" id="tamaXpFill"></div>
-      </div>
+      <div class="xp-bar-bg"><div class="xp-bar-fill" id="tamaXpFill"></div></div>
       <span class="xp-text" id="tamaXpText">0 / 100 XP</span>
+      
+      <!-- AFFICHAGE DES QUOTAS -->
+      <div class="stamina-row">
+        <div class="stamina-item">
+          ✋ Caresses
+          <span id="staminaClicks">0/100</span>
+        </div>
+        <div class="stamina-item" style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 15px;">
+          🎮 Quêtes
+          <span id="staminaGames">0/5</span>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -131,7 +145,7 @@
     </a>
   </div>
 
-  <!-- MODAL SELECTION STARTER -->
+  <!-- MODALS... -->
   <div id="starterModal" class="modal-overlay hidden">
     <div class="modal-content">
       <h2 style="color: var(--accent); margin-top: 0;">Choisis ton Starter !</h2>
@@ -143,7 +157,6 @@
     </div>
   </div>
 
-  <!-- MODAL RENAME -->
   <div id="renameModal" class="modal-overlay hidden">
     <div class="modal-content" style="max-width: 400px;">
       <h2 style="color: var(--accent); margin-top: 0;">Renommer</h2>
@@ -154,7 +167,6 @@
     </div>
   </div>
 
-  <!-- MODAL PROFIL (DRESSEUR) -->
   <div id="profileModal" class="modal-overlay hidden">
     <div class="modal-content">
       <h2 style="color: var(--accent); margin-top: 0;">Profil Dresseur</h2>
@@ -212,7 +224,10 @@
       document.getElementById('profileModal').classList.add('hidden');
     }
 
-    // --- MOTEUR DU TAMAGOTCHI ---
+    // --- MOTEUR DU TAMAGOTCHI & QUOTAS ---
+    const MAX_CLICKS = 100;
+    const MAX_GAMES = 5;
+
     const STARTERS_BASE = [
       { id: 1, name: "Bulbizarre" }, { id: 4, name: "Salamèche" }, { id: 7, name: "Carapuce" },
       { id: 152, name: "Germignon" }, { id: 155, name: "Héricendre" }, { id: 158, name: "Kaiminus" },
@@ -225,20 +240,35 @@
       { id: 906, name: "Poussacha" }, { id: 909, name: "Chochodile" }, { id: 912, name: "Coiffeton" }
     ];
 
-    let tamaState = { baseId: null, name: "", xp: 0 };
+    let tamaState = { baseId: null, name: "", xp: 0, dailyClicks: 0, dailyGames: 0, lastDate: "" };
     let tempSelectedStarter = null;
     let clickCooldown = false;
 
     function initTamagotchi() {
       const savedData = localStorage.getItem('pokeauc_tamagotchi');
+      const today = new Date().toDateString();
+
       if (!savedData) {
         document.getElementById('tamaPanel').classList.add('hidden');
         showStarterSelection();
       } else {
         tamaState = JSON.parse(savedData);
+        
+        // Initialisation de sécurité pour les anciens joueurs
+        if (tamaState.dailyClicks === undefined) tamaState.dailyClicks = 0;
+        if (tamaState.dailyGames === undefined) tamaState.dailyGames = 0;
+        
+        // RESET JOURNALIER
+        if (tamaState.lastDate !== today) {
+            tamaState.dailyClicks = 0;
+            tamaState.dailyGames = 0;
+            tamaState.lastDate = today;
+            saveTama();
+        }
+
         document.getElementById('tamaPanel').classList.remove('hidden');
         updateTamaUI();
-        checkGameXP(); // Vérifie s'il y a des XP en attente de la part des jeux !
+        checkGameXP();
       }
     }
 
@@ -263,7 +293,14 @@
     function confirmStarter() {
       if (!tempSelectedStarter) return alert("Choisis un Pokémon !");
       const chosenName = document.getElementById('initialTamaName').value.trim() || tempSelectedStarter.name;
-      tamaState = { baseId: tempSelectedStarter.id, name: chosenName, xp: 0 };
+      tamaState = { 
+          baseId: tempSelectedStarter.id, 
+          name: chosenName, 
+          xp: 0, 
+          dailyClicks: 0, 
+          dailyGames: 0, 
+          lastDate: new Date().toDateString() 
+      };
       saveTama();
       
       document.getElementById('starterModal').classList.add('hidden');
@@ -275,7 +312,6 @@
     function saveTama() { localStorage.setItem('pokeauc_tamagotchi', JSON.stringify(tamaState)); }
 
     function getLevelData() {
-      // Courbe RPG : Lvl 1(0 XP), Lvl 16(225 XP), Lvl 36(1225 XP)
       const level = Math.floor(Math.sqrt(tamaState.xp)) + 1;
       let evoStage = 0;
       if (level >= 36) evoStage = 2;
@@ -301,10 +337,19 @@
       document.getElementById('tamaXpFill').style.width = `${data.progressPercent}%`;
       document.getElementById('tamaXpText').innerText = `${data.xpInCurrentLevel} / ${data.xpNeededForLevel} XP`;
       
+      // Mise à jour des Quotas UI
+      document.getElementById('staminaClicks').innerText = `${tamaState.dailyClicks}/${MAX_CLICKS}`;
+      document.getElementById('staminaGames').innerText = `${tamaState.dailyGames}/${MAX_GAMES}`;
+
+      if (tamaState.dailyClicks >= MAX_CLICKS) document.getElementById('staminaClicks').style.color = '#ef4444';
+      else document.getElementById('staminaClicks').style.color = 'var(--accent)';
+
+      if (tamaState.dailyGames >= MAX_GAMES) document.getElementById('staminaGames').style.color = '#ef4444';
+      else document.getElementById('staminaGames').style.color = 'var(--accent)';
+
       const newSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${data.currentEvoId}.png`;
       document.getElementById('tamaSprite').src = newSprite;
 
-      // Animation d'évolution !
       if (lastEvoStage !== -1 && data.evoStage > lastEvoStage) {
         confetti({ particleCount: 150, spread: 100, colors: ['#fbbf24', '#f59e0b', '#fff'] });
         alert(`Incroyable ! ${tamaState.name} a évolué !`);
@@ -314,13 +359,20 @@
 
     function clickTama(event) {
       if(clickCooldown) return;
-      clickCooldown = true; setTimeout(() => clickCooldown = false, 150); // Anti Auto-clicker destructif
+      
+      // VÉRIFICATION DU QUOTA CLICS
+      if (tamaState.dailyClicks >= MAX_CLICKS) {
+          alert(`🐾 ${tamaState.name} est trop fatigué pour jouer ! Laisse-le se reposer jusqu'à demain.`);
+          return;
+      }
+
+      clickCooldown = true; setTimeout(() => clickCooldown = false, 150);
 
       tamaState.xp += 1;
+      tamaState.dailyClicks += 1;
       saveTama();
       updateTamaUI();
 
-      // Effet visuel
       const rect = document.getElementById('tamaSprite').getBoundingClientRect();
       const fx = document.createElement('div');
       fx.className = 'click-fx';
@@ -338,25 +390,31 @@
       document.getElementById('renameModal').classList.add('hidden');
     }
 
-    // --- RECEPTION DE L'XP DES MINI-JEUX ---
+    // --- RECEPTION DE L'XP DES MINI-JEUX AVEC QUOTA ---
     function checkGameXP() {
       const urlParams = new URLSearchParams(window.location.search);
       const earnedXp = parseInt(urlParams.get('game_xp'));
       
       if (earnedXp && !isNaN(earnedXp)) {
-        // Enlève le paramètre de l'URL proprement pour éviter le farm en faisant F5
         window.history.replaceState({}, document.title, window.location.pathname);
         
+        const alertZone = document.getElementById('xpAlertZone');
+
+        // VÉRIFICATION DU QUOTA JEUX
+        if (tamaState.dailyGames >= MAX_GAMES) {
+            alertZone.innerHTML = `<div class="xp-notification" style="background:#ef4444; color:#fff;">❌ Plus d'XP de quête disponible aujourd'hui !</div>`;
+            return;
+        }
+
         tamaState.xp += earnedXp;
+        tamaState.dailyGames += 1;
         saveTama();
         updateTamaUI();
         
-        const alertZone = document.getElementById('xpAlertZone');
-        alertZone.innerHTML = `<div class="xp-notification">🎉 ${tamaState.name} a gagné +${earnedXp} XP après ce match !</div>`;
+        alertZone.innerHTML = `<div class="xp-notification">🎉 ${tamaState.name} a gagné +${earnedXp} XP ! (${tamaState.dailyGames}/${MAX_GAMES})</div>`;
       }
     }
 
-    // Démarrage global
     window.onload = () => { initProfile(); initTamagotchi(); };
   </script>
 </body>
