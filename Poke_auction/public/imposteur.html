@@ -70,6 +70,7 @@
     .speech-bubble::after { content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); border-width: 8px 8px 0; border-style: solid; border-color: rgba(255,255,255,0.95) transparent transparent transparent; display: block; width: 0; }
     .speech-bubble.show { opacity: 1; transform: translateY(0); }
 
+    /* L'HISTORIQUE DE MOTS AU CENTRE */
     .word-log { background: rgba(0,0,0,0.7); padding: 10px 15px; border-radius: 12px; border: 1px solid var(--glass-border); max-height: 140px; overflow-y: auto; text-align: left; width: 100%; max-width: 400px; margin: 15px auto 0 auto; z-index: 100; position: relative; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); backdrop-filter: blur(10px);}
     .word-log::-webkit-scrollbar { width: 4px; }
     .word-log::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
@@ -116,7 +117,6 @@
       
       <div id="hostControls" class="hidden" style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; margin: 15px 0;">
         <h3>Paramètres de la partie</h3>
-        <!-- NOUVEAU MENU : Mode de Jeu -->
         <label>Mode : <select id="selMode" onchange="updateSettings()"><option value="classic">Classique</option><option value="undercover">Undercover</option></select></label><br>
         <label>Manches : <select id="selRounds" onchange="updateSettings()"><option value="1">1 Manche</option><option value="3">3 Manches</option><option value="5">5 Manches</option></select></label><br>
         <label>Mots/Joueur : <select id="selWords" onchange="updateSettings()"><option value="1">1 Mot</option><option value="2" selected>2 Mots</option><option value="3">3 Mots</option></select></label>
@@ -135,8 +135,7 @@
           <h2 id="secretName">Nom</h2>
         </div>
         <div id="imposteurView" class="hidden">
-          <div class="imposteur-alert">VOUS ÊTES L'IMPOSTEUR !</div>
-          <p>Fondez-vous dans la masse.</p>
+          <div class="imposteur-alert" id="imposteurAlertText"></div>
         </div>
       </div>
 
@@ -149,6 +148,7 @@
         <p id="wordErrorMsg" style="color: #ef4444; font-weight: bold;" class="hidden">Mot interdit ! Temps réduit.</p>
       </div>
 
+      <!-- HISTORIQUE CENTRAL -->
       <div id="historyLog" class="word-log hidden">
         <h4 style="margin:0 0 10px 0; color:var(--text); text-align:center;">Historique des Mots</h4>
         <div id="historyList"></div>
@@ -306,6 +306,21 @@
         document.getElementById('imposteurView').classList.remove('hidden');
         document.getElementById('innocentView').classList.add('hidden');
         document.getElementById('roleTitle').innerText = "Rôle Secret";
+        
+        const impPhrases = [
+          "VOUS ÊTES L'IMPOSTEUR !<br><span style='font-size:0.5em; color:#f8fafc; text-shadow:none;'>Fondez-vous dans la masse.</span>",
+          "ALERTE INFILTRATION !<br><span style='font-size:0.5em; color:#f8fafc; text-shadow:none;'>Ne vous faites pas démasquer.</span>",
+          "MISSION SECRÈTE !<br><span style='font-size:0.5em; color:#f8fafc; text-shadow:none;'>Trompez les enquêteurs.</span>",
+          "CIBLE INCONNUE !<br><span style='font-size:0.5em; color:#f8fafc; text-shadow:none;'>Bluffez pour sauver votre peau.</span>",
+          "VOUS ÊTES LA TAUPE !<br><span style='font-size:0.5em; color:#f8fafc; text-shadow:none;'>Improvisez un indice crédible.</span>",
+          "DANGER : ESPION !<br><span style='font-size:0.5em; color:#f8fafc; text-shadow:none;'>Mentez avec assurance.</span>",
+          "IDENTITÉ CACHÉE !<br><span style='font-size:0.5em; color:#f8fafc; text-shadow:none;'>Gardez votre sang-froid.</span>",
+          "ANOMALIE DÉTECTÉE !<br><span style='font-size:0.5em; color:#f8fafc; text-shadow:none;'>Vous êtes le saboteur de ce tour.</span>",
+          "VOUS ÊTES L'IMPOSTEUR !<br><span style='font-size:0.5em; color:#f8fafc; text-shadow:none;'>(Décidément, tu as la poisse de Babar...)</span>",
+          "ALERTE IMPOSTEUR !<br><span style='font-size:0.5em; color:#f8fafc; text-shadow:none;'>Essaie de ne pas faire une spéciale Babar !</span>"
+        ];
+        document.getElementById('imposteurAlertText').innerHTML = impPhrases[Math.floor(Math.random() * impPhrases.length)];
+
       } else {
         document.getElementById('imposteurView').classList.add('hidden');
         document.getElementById('innocentView').classList.remove('hidden');
