@@ -487,20 +487,35 @@ function triggerBotAuction(roomCode) {
     if (!bot || bot.team.length >= 3) return;
 
     clearTimeout(room.botTimeout);
-    let maxWilling = 100;
+    
+    let maxWilling = 150;
     const rarity = room.currentAuction.pokemon.rarity;
     
-    if (bot.botType === 'sniper') maxWilling = rarity === 'Légendaire' ? 450 : rarity === 'Épique' ? 300 : rarity === 'Rare' ? 200 : 100;
-    else if (bot.botType === 'flambeur') maxWilling = 350; 
-    else if (bot.botType === 'maniaque') { 
-      if (!bot.currentObsession) bot.currentObsession = Math.random() < 0.3 ? 800 : 50; 
-      maxWilling = bot.currentObsession; 
+    // IA CORRIGÉE ET BEAUCOUP PLUS AGRESSIVE
+    if (bot.botType === 'sniper') {
+        maxWilling = rarity === 'Légendaire' ? 600 : rarity === 'Épique' ? 400 : rarity === 'Rare' ? 250 : 150;
+    } else if (bot.botType === 'flambeur') {
+        maxWilling = Math.floor(Math.random() * 200) + 300; // Va pousser jusqu'à 300-500 pour troller
+    } else if (bot.botType === 'maniaque') {
+        // 50% de chance de vouloir le pokémon à tout prix (jusqu'à son budget max)
+        if (!bot.currentObsession) {
+            bot.currentObsession = Math.random() < 0.5 ? bot.budget : Math.floor(Math.random() * 100) + 50; 
+        }
+        maxWilling = bot.currentObsession; 
     }
 
     if (room.currentAuction.highestBid < maxWilling && bot.budget >= room.currentAuction.highestBid + 50 && room.currentAuction.highestBidder !== bot.id) {
-        let delay = Math.random() * 1500 + 1000; 
-        if (bot.botType === 'sniper') delay = Math.max(1000, room.currentAuction.timeLeft * 1000 - 1500); 
-        if (bot.botType === 'flambeur') delay = Math.random() * 800 + 400; 
+        
+        let delay = Math.random() * 1000 + 500; 
+        
+        if (bot.botType === 'sniper') {
+            const timeRemainingMs = room.currentAuction.timeLeft * 1000;
+            if (timeRemainingMs > 3000) {
+                delay = timeRemainingMs - (Math.random() * 1000 + 1500); // Mise à la toute dernière seconde !
+            }
+        } else if (bot.botType === 'flambeur') {
+            delay = Math.random() * 600 + 200; // Mise super vite (0.2s)
+        }
 
         room.botTimeout = setTimeout(() => {
             if (rooms[roomCode] && rooms[roomCode].state === 'AUCTION') {
@@ -510,6 +525,7 @@ function triggerBotAuction(roomCode) {
                      room.currentAuction.highestBidderName = bot.name;
                      room.currentAuction.timeLeft = 10;
                      io.to(roomCode).emit('bidUpdated', { highestBid: room.currentAuction.highestBid, highestBidderName: bot.name, timeLeft: 10 });
+                     
                      triggerBotAuction(roomCode); 
                  }
             }
