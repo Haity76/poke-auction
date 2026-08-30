@@ -17,7 +17,6 @@
       --text: #f8fafc;
     }
 
-    /* THEMES */
     body.theme-zekrom { --bg: radial-gradient(circle at 15% 50%, #1e293b, #020617); --accent: #38bdf8; --glow: 0 0 15px rgba(56, 189, 248, 0.6); }
     body.theme-reshiram { --bg: radial-gradient(circle at 80% 20%, #fdf4ff, #cbd5e1); --accent: #ea580c; --glow: 0 0 15px rgba(234, 88, 12, 0.6); --text: #0f172a; --glass-bg: rgba(255, 255, 255, 0.6); }
     body.theme-lunala { --bg: radial-gradient(circle at 50% 100%, #3b0764, #0f0728); --accent: #c084fc; --glow: 0 0 15px rgba(192, 132, 252, 0.6); }
@@ -60,7 +59,6 @@
     
     #wordInputZone { margin-top: 15px; transition: 0.3s; }
 
-    /* LE CERCLE DES JOUEURS DYNAMIQUE */
     #playersRing { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
     .ring-player { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; }
     .ring-player img { width: 65px; height: 65px; border-radius: 50%; border: 3px solid var(--glass-border); box-shadow: 0 4px 10px rgba(0,0,0,0.5); object-fit: cover; transition: all 0.3s; }
@@ -72,14 +70,22 @@
     .speech-bubble::after { content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); border-width: 8px 8px 0; border-style: solid; border-color: rgba(255,255,255,0.95) transparent transparent transparent; display: block; width: 0; }
     .speech-bubble.show { opacity: 1; transform: translateY(0); }
 
-    .vote-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 20px; }
+    /* L'HISTORIQUE DE MOTS AU CENTRE */
+    .word-log { background: rgba(0,0,0,0.7); padding: 10px 15px; border-radius: 12px; border: 1px solid var(--glass-border); max-height: 140px; overflow-y: auto; text-align: left; width: 100%; max-width: 400px; margin: 15px auto 0 auto; z-index: 100; position: relative; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); backdrop-filter: blur(10px);}
+    .word-log::-webkit-scrollbar { width: 4px; }
+    .word-log::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+    .log-entry { margin-bottom: 5px; font-size: 1.05em; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;}
+    .log-entry span { color: var(--accent); font-weight: bold; }
+    .auto-word { color: #94a3b8; font-style: italic; }
+
+    .vote-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 15px; }
     .vote-card { background: rgba(0,0,0,0.4); border: 2px solid var(--glass-border); padding: 15px; border-radius: 12px; cursor: pointer; transition: 0.2s; }
     .vote-card:hover { border-color: var(--accent); box-shadow: var(--glow); transform: scale(1.05); }
     .vote-card.selected { border-color: #22c55e; box-shadow: 0 0 15px #22c55e; background: rgba(34,197,94,0.2); }
 
     footer { padding: 8px; background: var(--glass-bg); border-top: 1px solid var(--glass-border); display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; flex-shrink: 0; -webkit-overflow-scrolling: touch; backdrop-filter: blur(10px); z-index: 100;}
     footer::-webkit-scrollbar { display: none; }
-    .theme-btn { border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 12px; font-weight: bold; font-family: var(--font-main); cursor: pointer; font-size: 0.9em; flex-shrink: 0; transition: 0.2s; }
+    .theme-btn { border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 12px; font-weight: bold; font-family: var(--font-main); cursor: pointer; font-size: 0.9em; flex-shrink: 0; transition: 0.2s; background: rgba(0,0,0,0.3); color: #fff; }
 
     .hidden { display: none !important; }
     .shake-red { animation: shakeRed 0.4s; border-color: #ef4444 !important; }
@@ -95,11 +101,11 @@
 
   <div class="main-layout">
     
-    <!-- CERCLE DES JOUEURS (Affiché en jeu) -->
     <div id="playersRing" class="hidden"></div>
 
     <div id="lobbyZone" class="glass-panel">
       <h2>Rejoindre l'Enquête</h2>
+      <p style="font-size: 1.1em; opacity: 0.8; margin-bottom: 20px;">(Votre profil est géré depuis le Hub Central)</p>
       <button class="btn" onclick="createRoom()">Héberger une Partie</button>
       <hr style="border-color: var(--glass-border); margin: 20px 0;">
       <input type="text" id="roomCodeInput" placeholder="Code Salon (ex: IMP-1234)">
@@ -141,11 +147,24 @@
         <button class="btn" onclick="submitWord()">Envoyer</button>
         <p id="wordErrorMsg" style="color: #ef4444; font-weight: bold;" class="hidden">Mot interdit ! Temps réduit.</p>
       </div>
+
+      <!-- HISTORIQUE CENTRAL (Visible pendant le jeu et le vote) -->
+      <div id="historyLog" class="word-log hidden">
+        <h4 style="margin:0 0 10px 0; color:var(--text); text-align:center;">Historique des Mots</h4>
+        <div id="historyList"></div>
+      </div>
     </div>
 
     <div id="votingZone" class="glass-panel hidden">
-      <h2 style="color: #ef4444;">Le Tribunal</h2>
+      <h2 style="color: #ef4444; margin: 0;">Le Tribunal</h2>
       <p>Qui est l'imposteur selon vous ?</p>
+      
+      <!-- Rappel de l'historique pendant le vote -->
+      <div class="word-log" style="margin-top:0;">
+        <h4 style="margin:0 0 5px 0; color:var(--text); text-align:center; font-size: 0.9em;">Rappel des Mots</h4>
+        <div id="voteHistoryList"></div>
+      </div>
+
       <div id="voteGrid" class="vote-grid"></div>
       <button class="btn" id="confirmVoteBtn" style="margin-top:20px;" onclick="confirmVote()" disabled>Voter</button>
     </div>
@@ -177,13 +196,13 @@
   </div>
 
   <footer>
-    <button class="theme-btn" style="background:#00d2ff; color:#000" onclick="setTheme('theme-zekrom')">Zekrom</button>
-    <button class="theme-btn" style="background:#ff4500; color:#fff" onclick="setTheme('theme-reshiram')">Reshiram</button>
-    <button class="theme-btn" style="background:#9d4edd; color:#fff" onclick="setTheme('theme-lunala')">Lunala</button>
-    <button class="theme-btn" style="background:#d97706; color:#fff" onclick="setTheme('theme-heatran')">Heatran</button>
-    <button class="theme-btn" style="background:#8b5cf6; color:#fff" onclick="setTheme('theme-tenefix')">Ténéfix</button>
-    <button class="theme-btn" style="background:#f43f5e; color:#fff" onclick="setTheme('theme-eternatos')">Éthernatos</button>
-    <button class="theme-btn" style="background:#eab308; color:#000" onclick="setTheme('theme-brutalibre')">Brutalibré</button>
+    <button class="theme-btn" style="background:#00d2ff; color:#000; border:none;" onclick="setTheme('theme-zekrom')">Zekrom</button>
+    <button class="theme-btn" style="background:#ff4500; color:#fff; border:none;" onclick="setTheme('theme-reshiram')">Reshiram</button>
+    <button class="theme-btn" style="background:#9d4edd; color:#fff; border:none;" onclick="setTheme('theme-lunala')">Lunala</button>
+    <button class="theme-btn" style="background:#d97706; color:#fff; border:none;" onclick="setTheme('theme-heatran')">Heatran</button>
+    <button class="theme-btn" style="background:#8b5cf6; color:#fff; border:none;" onclick="setTheme('theme-tenefix')">Ténéfix</button>
+    <button class="theme-btn" style="background:#f43f5e; color:#fff; border:none;" onclick="setTheme('theme-eternatos')">Éthernatos</button>
+    <button class="theme-btn" style="background:#eab308; color:#000; border:none;" onclick="setTheme('theme-brutalibre')">Brutalibré</button>
   </footer>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -194,7 +213,7 @@
     let playersData = {};
     let selectedSuspectId = null;
     let currentActivePlayerId = null;
-    let playerLatestWords = {}; // Stocke la dernière bulle de chaque joueur
+    let playerLatestWords = {}; 
     
     const myName = localStorage.getItem('pokeauc_username') || 'Enquêteur';
     const myAvatar = localStorage.getItem('pokeauc_avatar') || "https://play.pokemonshowdown.com/sprites/trainers/red.png";
@@ -203,7 +222,13 @@
     function setTheme(t) { document.body.className = t; }
 
     function goToHub() { socket.emit('leaveRoom'); window.location.href = 'index.html'; }
-    function launchGame() { socket.emit('startImposteurGame'); }
+    
+    function launchGame() {
+      // CORRECTION : On envoie les paramètres choisis au moment du lancement !
+      const r = parseInt(document.getElementById('selRounds').value);
+      const w = parseInt(document.getElementById('selWords').value);
+      socket.emit('startImposteurGame', { maxRounds: r, wordsPerPlayer: w });
+    }
 
     function switchZone(id) {
       ['lobbyZone', 'waitingZone', 'gameZone', 'votingZone', 'counterAttackZone', 'roundEndZone'].forEach(z => document.getElementById(z).classList.add('hidden'));
@@ -245,7 +270,6 @@
       if(!isHost) { document.getElementById('selRounds').value = settings.maxRounds; document.getElementById('selWords').value = settings.wordsPerPlayer; }
     });
 
-    // --- LE RENDU DYNAMIQUE DU CERCLE DES JOUEURS ---
     function renderPlayersRing() {
       const ring = document.getElementById('playersRing');
       ring.innerHTML = '';
@@ -253,10 +277,9 @@
       const numPlayers = players.length;
       
       players.forEach((p, index) => {
-        // Calcul d'ellipse (Le centre de l'écran est libre pour la grosse carte)
         const angle = (index / numPlayers) * (2 * Math.PI) - (Math.PI / 2);
-        const x = 50 + 40 * Math.cos(angle); // de 10% à 90%
-        const y = 50 + 40 * Math.sin(angle); // de 10% à 90%
+        const x = 50 + 40 * Math.cos(angle); 
+        const y = 50 + 40 * Math.sin(angle); 
         
         const isTurn = (p.id === currentActivePlayerId);
         const latestWord = playerLatestWords[p.id];
@@ -276,6 +299,8 @@
     socket.on('impRoundStarted', (data) => {
       playersData = data.players;
       playerLatestWords = {};
+      document.getElementById('historyList').innerHTML = '';
+      document.getElementById('historyLog').classList.add('hidden');
       switchZone('gameZone');
       
       if (data.isImposteur) {
@@ -305,7 +330,7 @@
         document.getElementById('wordInput').value = '';
         document.getElementById('wordInput').focus();
       }
-      renderPlayersRing(); // Mets à jour le joueur qui sautille
+      renderPlayersRing(); 
     });
 
     socket.on('impTimerUpdate', (time) => {
@@ -330,13 +355,21 @@
       setTimeout(() => input.classList.remove('shake-red'), 400);
     });
 
-    // Affichage des bulles !
+    // L'AJOUT DE L'HISTORIQUE !
     socket.on('impWordAccepted', (data) => {
       playerLatestWords[data.playerId] = data.word;
       renderPlayersRing(); 
+      
+      const pName = playersData[data.playerId].name;
+      const cssClass = data.isAuto ? 'auto-word' : '';
+      const hList = document.getElementById('historyList');
+      hList.innerHTML += `<div class="log-entry"><span>${pName} :</span> <span class="${cssClass}">${data.word}</span></div>`;
+      
+      const hLog = document.getElementById('historyLog');
+      hLog.classList.remove('hidden');
+      hLog.scrollTop = hLog.scrollHeight;
     });
 
-    // LA FAMEUSE PAUSE DE 10 SECONDES AVANT LE VOTE
     socket.on('impWaitBeforeVote', (data) => {
       document.getElementById('turnIndicator').innerHTML = `<span style="color:#22c55e;">Fin des tours. Analysez les mots !</span>`;
       document.getElementById('wordInputZone').classList.add('hidden');
@@ -351,10 +384,16 @@
       }, 1000);
     });
 
-    socket.on('impStartVoting', () => {
+    socket.on('impStartVoting', (data) => {
       switchZone('votingZone');
       selectedSuspectId = null;
       document.getElementById('confirmVoteBtn').disabled = true;
+      
+      // Copier l'historique sur la page de vote
+      document.getElementById('voteHistoryList').innerHTML = data.log.map(l => {
+        const css = l.isAuto ? 'auto-word' : '';
+        return `<div class="log-entry"><span>${playersData[l.playerId].name} :</span> <span class="${css}">${l.word}</span></div>`;
+      }).join('');
       
       const grid = document.getElementById('voteGrid');
       grid.innerHTML = Object.values(playersData).filter(p => p.connected).map(p => `
