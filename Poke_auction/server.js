@@ -89,7 +89,7 @@ io.on('connection', (socket) => {
     socket.join(roomCode);
     
     rooms[roomCode] = { 
-      code: roomCode, gameType: gameType, players: {}, host: socket.id, state: 'LOBBY', disconnectTimeout: null,
+      code: roomCode, gameType: gameType, players: {}, host: socket.id, state: 'LOBBY', disconnectTimeout: null, botTimeout: null,
       votes: {}, chosenMode: 'shiny', currentAuction: null, auctionTimer: null, battleState: null, rematchVotes: new Set(), shopItems: [],
       impSettings: { maxRounds: 1, wordsPerPlayer: 2, mode: 'classic' }, 
       impState: { round: 0, turnOrder: [], currentTurnIdx: 0, currentWordLap: 0, secretPoke: null, undercoverPoke: null, imposteurId: null, wordsLog: [], timer: null, timeLeft: 0, votes: {} }
@@ -98,35 +98,32 @@ io.on('connection', (socket) => {
     socket.emit('roomCreated', { roomCode, role: 'player' });
   });
 
-  // NOUVEAU : CRÉATION DU MODE SOLO AVEC IA
   socket.on('createSoloRoom', (userData) => {
     const roomCode = generateRoomCode('pokeauc');
     currentRoom = roomCode;
     socket.join(roomCode);
     
     rooms[roomCode] = { 
-      code: roomCode, gameType: 'pokeauc', players: {}, host: socket.id, state: 'LOBBY', disconnectTimeout: null,
+      code: roomCode, gameType: 'pokeauc', players: {}, host: socket.id, state: 'LOBBY', disconnectTimeout: null, botTimeout: null,
       votes: {}, chosenMode: 'shiny', currentAuction: null, auctionTimer: null, battleState: null, rematchVotes: new Set(), shopItems: []
     };
     rooms[roomCode].players[socket.id] = { id: socket.id, name: userData.name, avatar: userData.avatar, role: 'player', connected: true, ready: false, budget: 900, team: [], score: 0 };
     
-    // Génération du Bot
     const botTypes = ['sniper', 'flambeur', 'maniaque'];
     const botType = botTypes[Math.floor(Math.random() * botTypes.length)];
     const botId = 'bot_' + Math.floor(Math.random()*10000);
     const botAvatars = ["https://play.pokemonshowdown.com/sprites/trainers/silver.png", "https://play.pokemonshowdown.com/sprites/trainers/giovanni.png", "https://play.pokemonshowdown.com/sprites/trainers/cynthia.png"];
     
+    // CORRECTION : Plus de propriété botTimeout DANS le joueur (ça faisait crasher Socket.io)
     rooms[roomCode].players[botId] = {
         id: botId, name: "Dresseur_Rival", avatar: botAvatars[Math.floor(Math.random()*botAvatars.length)],
-        role: 'player', connected: true, ready: false, budget: 900, team: [], score: 0, isBot: true, botType: botType, botTimeout: null
+        role: 'player', connected: true, ready: false, budget: 900, team: [], score: 0, isBot: true, botType: botType
     };
 
     socket.emit('roomCreated', { roomCode, role: 'player' });
     
-    // On passe directement à la phase de vote puisque la salle est pleine
     rooms[roomCode].state = 'VOTING';
     io.to(roomCode).emit('startVotingPhase', { players: rooms[roomCode].players });
-    // Le bot vote automatiquement
     rooms[roomCode].votes[botId] = ['shiny', 'pokedex', 'masque'][Math.floor(Math.random()*3)];
   });
 
@@ -233,7 +230,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // === POKEAUC EVENTS ===
   socket.on('voteMode', (mode) => { const r = rooms[currentRoom]; if(r && r.state === 'VOTING') { r.votes[socket.id] = mode; if(Object.keys(r.votes).length === 2) { const v = Object.values(r.votes); r.chosenMode = v[0] === v[1] ? v[0] : v[Math.floor(Math.random() * v.length)]; startNextAuction(currentRoom); } } });
   
   socket.on('placeBid', () => { 
@@ -246,7 +242,7 @@ io.on('connection', (socket) => {
           r.currentAuction.highestBidderName = p.name; 
           r.currentAuction.timeLeft = 10; 
           io.to(currentRoom).emit('bidUpdated', { highestBid: r.currentAuction.highestBid, highestBidderName: p.name, timeLeft: 10 }); 
-          triggerBotAuction(currentRoom); // Déclenche la réflexion du Bot
+          triggerBotAuction(currentRoom); 
       } 
   });
   
@@ -261,7 +257,7 @@ io.on('connection', (socket) => {
       room.rematchVotes.add(socket.id); 
       
       const bot = Object.values(room.players).find(p => p.isBot);
-      if (bot) room.rematchVotes.add(bot.id); // Le bot accepte toujours la revanche
+      if (bot) room.rematchVotes.add(bot.id);
 
       io.to(currentRoom).emit('rematchUpdate', { count: room.rematchVotes.size }); 
       if(room.rematchVotes.size >= 2) { 
@@ -274,7 +270,6 @@ io.on('connection', (socket) => {
       } 
   });
 
-  // === IMPOSTEUR EVENTS ===
   socket.on('updateImpSettings', (settings) => { const room = rooms[currentRoom]; if (room && room.host === socket.id && room.gameType === 'imposteur') { room.impSettings = settings; io.to(currentRoom).emit('impSettingsUpdated', settings); } });
   socket.on('startImposteurGame', async (settings) => { const room = rooms[currentRoom]; if (!room || room.host !== socket.id || room.gameType !== 'imposteur') return; if (settings) room.impSettings = settings; Object.values(room.players).forEach(p => p.score = 0); room.impState.round = 1; await startImposteurRound(currentRoom); });
   socket.on('submitImpWord', (word) => {
@@ -298,7 +293,6 @@ io.on('connection', (socket) => {
   socket.on('submitImpCounterAttack', (guess) => { const room = rooms[currentRoom]; if (!room || room.state !== 'COUNTER_ATTACK' || socket.id !== room.impState.imposteurId) return; clearTimeout(room.impState.timer); const success = (normalizeString(room.impState.secretPoke.name) === normalizeString(guess)); finishImposteurRound(currentRoom, success, guess); });
 });
 
-
 // ==========================================
 // LOGIQUE BOT (INTELLIGENCE ARTIFICIELLE)
 // ==========================================
@@ -309,28 +303,28 @@ function triggerBotAuction(roomCode) {
     const bot = Object.values(room.players).find(p => p.isBot);
     if (!bot || bot.team.length >= 3) return;
 
-    clearTimeout(bot.botTimeout);
+    // CORRECTION : Utilisation du timer global de la room, jamais dans le profil du bot.
+    clearTimeout(room.botTimeout);
 
-    // Stratégies d'enchères selon la personnalité du bot
     let maxWilling = 100;
     const rarity = room.currentAuction.pokemon.rarity;
     
     if (bot.botType === 'sniper') {
         maxWilling = rarity === 'Légendaire' ? 450 : rarity === 'Épique' ? 300 : rarity === 'Rare' ? 200 : 100;
     } else if (bot.botType === 'flambeur') {
-        maxWilling = 350; // Mise haut pour troller
+        maxWilling = 350; 
     } else if (bot.botType === 'maniaque') {
-        if (!bot.currentObsession) bot.currentObsession = Math.random() < 0.3 ? 800 : 50; // Obsession ou désintérêt total
+        if (!bot.currentObsession) bot.currentObsession = Math.random() < 0.3 ? 800 : 50; 
         maxWilling = bot.currentObsession;
     }
 
     if (room.currentAuction.highestBid < maxWilling && bot.budget >= room.currentAuction.highestBid + 50 && room.currentAuction.highestBidder !== bot.id) {
         
-        let delay = Math.random() * 1500 + 1000; // 1s à 2.5s classique
-        if (bot.botType === 'sniper') delay = Math.max(1000, room.currentAuction.timeLeft * 1000 - 1500); // Attend la dernière seconde
-        if (bot.botType === 'flambeur') delay = Math.random() * 800 + 400; // Rapide pour stresser
+        let delay = Math.random() * 1500 + 1000; 
+        if (bot.botType === 'sniper') delay = Math.max(1000, room.currentAuction.timeLeft * 1000 - 1500); 
+        if (bot.botType === 'flambeur') delay = Math.random() * 800 + 400; 
 
-        bot.botTimeout = setTimeout(() => {
+        room.botTimeout = setTimeout(() => {
             if (rooms[roomCode] && rooms[roomCode].state === 'AUCTION') {
                  if (room.currentAuction.highestBidder !== bot.id && room.currentAuction.highestBid < maxWilling && bot.budget >= room.currentAuction.highestBid + 50) {
                      room.currentAuction.highestBid += 50;
@@ -351,13 +345,13 @@ function triggerBotShop(roomCode) {
     const bot = Object.values(room.players).find(p => p.isBot);
     if (!bot) return;
 
-    bot.botTimeout = setTimeout(() => {
+    room.botTimeout = setTimeout(() => {
         if (rooms[roomCode] && rooms[roomCode].state === 'SHOP') {
             bot.ready = true;
             const players = Object.values(room.players).filter(p => p.role === 'player');
             if (players.every(p => p.ready)) startBattle(roomCode);
         }
-    }, 2500); // 2.5 secondes de boutique virtuelle
+    }, 2500); 
 }
 
 function triggerBotBattle(roomCode) {
@@ -369,13 +363,12 @@ function triggerBotBattle(roomCode) {
     const b = room.battleState;
     if ((b.attackerId === bot.id && b.attackerAction) || (b.defenderId === bot.id && b.defenderAction)) return;
 
-    bot.botTimeout = setTimeout(() => {
+    room.botTimeout = setTimeout(() => {
          if (rooms[roomCode] && rooms[roomCode].state === 'BATTLE') {
              const botActiveIdx = b.attackerId === bot.id ? b.p1ActiveIndex : (b.p1.id === bot.id ? b.p1ActiveIndex : b.p2ActiveIndex);
              const activePoke = bot.team[botActiveIdx];
 
              if (b.attackerId === bot.id) {
-                 // Choix de l'attaque selon la stat la plus haute !
                  b.attackerAction = activePoke.attack >= activePoke.spAtk ? 'physique' : 'special';
              } else {
                  b.defenderAction = Math.random() > 0.5 ? 'physiqueDef' : 'specialDef';
@@ -384,7 +377,6 @@ function triggerBotBattle(roomCode) {
          }
     }, 2000); 
 }
-
 
 // === FONCTIONS POKEAUC CORE ===
 async function startNextAuction(roomCode) { 
@@ -399,7 +391,7 @@ async function startNextAuction(roomCode) {
     io.to(roomCode).emit('newAuction', { hint: h, rarity: p.rarity, players: r.players }); 
     
     const bot = Object.values(r.players).find(pl => pl.isBot);
-    if(bot) bot.currentObsession = null; // Reset de l'obsession du bot
+    if(bot) bot.currentObsession = null; 
     
     if(r.auctionTimer) clearInterval(r.auctionTimer); 
     r.auctionTimer = setInterval(() => { 
@@ -464,7 +456,7 @@ function resolveTurn(roomCode) {
 function sendBattleUpdate(roomCode, logMsg) { const r = rooms[roomCode]; io.to(roomCode).emit('battleUpdate', { battle: r.battleState, players: r.players, log: logMsg, gameState: r.state }); }
 function sendBattleUpdateToSocket(sId, roomCode, logMsg) { const r = rooms[roomCode]; io.to(sId).emit('battleUpdate', { battle: r.battleState, players: r.players, log: logMsg, gameState: r.state }); }
 
-// === IMPOSTEUR CORE (CRASH CORRIGÉ) ===
+// === IMPOSTEUR CORE ===
 async function startImposteurRound(roomCode) {
   const room = rooms[roomCode];
   room.state = 'PLAYING';
@@ -516,7 +508,7 @@ function startImposteurTurn(roomCode) {
 
 function acceptWordAndNextTurn(roomCode, playerId, word, isAuto) {
   const room = rooms[roomCode];
-  if (!room || !room.impState) return; // LA LIGNE QUI EMPÊCHE LE CRASH !
+  if (!room || !room.impState) return; 
   
   room.impState.wordsLog.push({ playerId, word, isAuto });
   io.to(roomCode).emit('impWordAccepted', { playerId, word, isAuto, log: room.impState.wordsLog });
