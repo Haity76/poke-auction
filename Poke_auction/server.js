@@ -96,8 +96,9 @@ io.on('connection', (socket) => {
     rooms[roomCode] = { 
       code: roomCode, gameType: gameType, players: {}, host: socket.id, state: 'LOBBY', disconnectTimeout: null,
       votes: {}, chosenMode: 'shiny', currentAuction: null, auctionTimer: null, battleState: null, rematchVotes: new Set(), shopItems: [],
-      impSettings: { maxRounds: 1, wordsPerPlayer: 2 }, // Corrigé : 2 mots par défaut
-      impState: { round: 0, turnOrder: [], currentTurnIdx: 0, currentWordLap: 0, secretPoke: null, imposteurId: null, wordsLog: [], timer: null, timeLeft: 0, votes: {} }
+      // NOUVEAU : On intègre le mode de jeu (classic ou undercover)
+      impSettings: { maxRounds: 1, wordsPerPlayer: 2, mode: 'classic' }, 
+      impState: { round: 0, turnOrder: [], currentTurnIdx: 0, currentWordLap: 0, secretPoke: null, undercoverPoke: null, imposteurId: null, wordsLog: [], timer: null, timeLeft: 0, votes: {} }
     };
     
     rooms[roomCode].players[socket.id] = { id: socket.id, name: userData.name, avatar: userData.avatar, role: 'player', connected: true, ready: false, budget: 900, team: [], score: 0 };
@@ -120,7 +121,6 @@ io.on('connection', (socket) => {
       socket.join(roomCode);
       
       if (room.host === oldId) room.host = socket.id;
-      
       if (room.currentAuction && room.currentAuction.highestBidder === oldId) room.currentAuction.highestBidder = socket.id;
       if (room.battleState) {
         if (room.battleState.p1.id === oldId) room.battleState.p1.id = socket.id;
@@ -129,9 +129,11 @@ io.on('connection', (socket) => {
         if (room.battleState.defenderId === oldId) room.battleState.defenderId = socket.id;
       }
       
-      if (room.impState.imposteurId === oldId) room.impState.imposteurId = socket.id;
-      const idx = room.impState.turnOrder.indexOf(oldId);
-      if (idx !== -1) room.impState.turnOrder[idx] = socket.id;
+      if (room.impState && room.impState.imposteurId === oldId) room.impState.imposteurId = socket.id;
+      if (room.impState && room.impState.turnOrder) {
+        const idx = room.impState.turnOrder.indexOf(oldId);
+        if (idx !== -1) room.impState.turnOrder[idx] = socket.id;
+      }
       
       io.to(roomCode).emit('playerReconnected', { name });
       socket.emit('roomJoined', { roomCode, role: room.players[socket.id].role, gameType: room.gameType });
@@ -222,14 +224,11 @@ io.on('connection', (socket) => {
     }
   });
 
-  // CORRECTION CLÉ : Le serveur reçoit et FORCE les paramètres choisis au lancement !
   socket.on('startImposteurGame', async (settings) => {
     const room = rooms[currentRoom];
     if (!room || room.host !== socket.id || room.gameType !== 'imposteur') return;
     
-    if (settings) {
-      room.impSettings = settings; // Force l'enregistrement de ce qu'il y a à l'écran
-    }
+    if (settings) room.impSettings = settings;
     
     Object.values(room.players).forEach(p => p.score = 0);
     room.impState.round = 1;
@@ -243,10 +242,15 @@ io.on('connection', (socket) => {
     const activePlayerId = room.impState.turnOrder[room.impState.currentTurnIdx];
     if (socket.id !== activePlayerId) return;
 
-    const pokeName = normalizeString(room.impState.secretPoke.name);
     const submittedWord = normalizeString(word);
+    
+    // ANTI-TRICHE DYNAMIQUE (Vérifie le bon Pokémon selon le rôle et le mode)
+    let forbiddenName = normalizeString(room.impState.secretPoke.name);
+    if (room.impSettings.mode === 'undercover' && socket.id === room.impState.imposteurId) {
+        forbiddenName = normalizeString(room.impState.undercoverPoke.name);
+    }
 
-    if (submittedWord.includes(pokeName) || (pokeName.includes(submittedWord) && submittedWord.length > 3)) {
+    if (submittedWord.includes(forbiddenName) || (forbiddenName.includes(submittedWord) && submittedWord.length > 3)) {
       room.impState.timeLeft = Math.floor(room.impState.timeLeft / 2);
       socket.emit('impWordRejected', { msg: "Mot interdit ou trop proche du nom !", timeLeft: room.impState.timeLeft });
       if (room.impState.timeLeft <= 0) {
@@ -302,9 +306,23 @@ async function startImposteurRound(roomCode) {
   let poke = await getRandomPokemon();
   let failSafe = 0;
   while(!poke && failSafe < 5) { poke = await getRandomPokemon(); failSafe++; }
-  if (!poke) { io.to(roomCode).emit('errorMsg', "Erreur de connexion à l'API Pokémon."); room.state = 'LOBBY'; return; }
+  
+  // NOUVEAU : On charge un 2ème Pokémon si on est en mode Undercover
+  let poke2 = null;
+  if (room.impSettings.mode === 'undercover') {
+    poke2 = await getRandomPokemon();
+    failSafe = 0;
+    while((!poke2 || poke2.id === poke.id) && failSafe < 5) { poke2 = await getRandomPokemon(); failSafe++; }
+  }
+  
+  if (!poke || (room.impSettings.mode === 'undercover' && !poke2)) { 
+      io.to(roomCode).emit('errorMsg', "Erreur API Pokémon. Relancez."); 
+      room.state = 'LOBBY'; 
+      return; 
+  }
   
   room.impState.secretPoke = poke;
+  room.impState.undercoverPoke = poke2;
   room.impState.wordsLog = [];
   room.impState.votes = {};
   room.impState.currentWordLap = 1;
@@ -316,11 +334,35 @@ async function startImposteurRound(roomCode) {
 
   playerIds.forEach(id => {
     const isImp = (id === room.impState.imposteurId);
+    
+    let sentPoke = poke;
+    let flagImp = isImp;
+
+    // En Undercover, l'imposteur ne sait pas qu'il est l'imposteur !
+    if (room.impSettings.mode === 'undercover') {
+        flagImp = false; 
+        sentPoke = isImp ? poke2 : poke;
+    } else {
+        sentPoke = isImp ? null : poke;
+    }
+
     io.to(id).emit('impRoundStarted', {
-      isImposteur: isImp, pokemon: isImp ? null : { name: poke.name, sprite: poke.sprite }, turnOrder: room.impState.turnOrder, players: room.players
+      isImposteur: flagImp, 
+      pokemon: sentPoke ? { name: sentPoke.name, sprite: sentPoke.sprite } : null, 
+      turnOrder: room.impState.turnOrder, 
+      players: room.players,
+      mode: room.impSettings.mode
     });
   });
-  startImposteurTurn(roomCode);
+  
+  // LE SERVEUR OUVRE LE BAL
+  const hints = [`Type: ${poke.types}`, `Couleur: ${poke.color}`, `Taille: ${poke.height/10}m`, `Poids: ${poke.weight/10}kg`];
+  const sysHint = hints[Math.floor(Math.random() * hints.length)] + " (Indice Système)";
+  
+  room.impState.wordsLog.push({ playerId: 'system', word: sysHint, isAuto: true });
+  io.to(roomCode).emit('impWordAccepted', { playerId: 'system', word: sysHint, isAuto: true, log: room.impState.wordsLog });
+
+  setTimeout(() => startImposteurTurn(roomCode), 2000);
 }
 
 function startImposteurTurn(roomCode) {
@@ -353,7 +395,6 @@ function acceptWordAndNextTurn(roomCode, playerId, word, isAuto) {
     room.impState.currentTurnIdx = 0;
     room.impState.currentWordLap++;
     
-    // Le tour est fini si on a dépassé le nombre de mots défini par le Host
     if (room.impState.currentWordLap > room.impSettings.wordsPerPlayer) {
       io.to(roomCode).emit('impWaitBeforeVote', { delay: 10 });
       setTimeout(() => startImposteurVoting(roomCode), 10000);
