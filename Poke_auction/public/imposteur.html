@@ -17,19 +17,28 @@
       --text: #f8fafc;
     }
 
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { font-family: var(--font-main); background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    /* THEMES */
+    body.theme-zekrom { --bg: radial-gradient(circle at 15% 50%, #1e293b, #020617); --accent: #38bdf8; --glow: 0 0 15px rgba(56, 189, 248, 0.6); }
+    body.theme-reshiram { --bg: radial-gradient(circle at 80% 20%, #fdf4ff, #cbd5e1); --accent: #ea580c; --glow: 0 0 15px rgba(234, 88, 12, 0.6); --text: #0f172a; --glass-bg: rgba(255, 255, 255, 0.6); }
+    body.theme-lunala { --bg: radial-gradient(circle at 50% 100%, #3b0764, #0f0728); --accent: #c084fc; --glow: 0 0 15px rgba(192, 132, 252, 0.6); }
+    body.theme-heatran { --bg: radial-gradient(circle at 20% 80%, #7f1d1d, #2c0b0e); --accent: #facc15; --glow: 0 0 15px rgba(250, 204, 21, 0.6); }
+    body.theme-tenefix { --bg: radial-gradient(circle at 50% 50%, #1e1b4b, #0f0e17); --accent: #34d399; --glow: 0 0 15px rgba(52, 211, 153, 0.6); }
+    body.theme-eternatos { --bg: radial-gradient(circle at 80% 80%, #831843, #2e0618); --accent: #f43f5e; --glow: 0 0 15px rgba(244, 63, 94, 0.6); }
+    body.theme-brutalibre { --bg: radial-gradient(circle at 10% 10%, #422006, #1a0b02); --accent: #eab308; --glow: 0 0 15px rgba(234, 179, 8, 0.6); }
 
-    header { padding: 10px; text-align: center; background: var(--glass-bg); border-bottom: 1px solid var(--glass-border); flex-shrink: 0; backdrop-filter: blur(10px); display: flex; justify-content: space-between; align-items: center;}
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: var(--font-main); background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: background 0.5s ease; }
+
+    header { padding: 10px; text-align: center; background: var(--glass-bg); border-bottom: 1px solid var(--glass-border); flex-shrink: 0; backdrop-filter: blur(10px); display: flex; justify-content: space-between; align-items: center; z-index: 100;}
     h1 { margin: 0; font-size: 1.5em; color: var(--accent); letter-spacing: 2px; text-shadow: var(--glow); text-transform: uppercase;}
     .home-btn { background: transparent; border: 1px solid var(--accent); color: var(--text); padding: 5px 15px; border-radius: 12px; cursor: pointer; font-weight: bold; }
     .home-btn:hover { background: var(--accent); color: #000; }
 
-    .main-layout { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; overflow-y: auto; }
+    .main-layout { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; overflow: hidden; position: relative; }
     
-    .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); border-radius: 16px; padding: 25px; width: 100%; max-width: 700px; text-align: center; }
+    .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); border-radius: 16px; padding: 25px; width: 100%; max-width: 600px; text-align: center; position: relative; z-index: 100; }
 
-    .btn { background: transparent; border: 2px solid var(--accent); color: var(--text); font-family: var(--font-main); font-weight: bold; padding: 10px 25px; border-radius: 30px; cursor: pointer; font-size: 1.2em; text-transform: uppercase; transition: all 0.2s; box-shadow: var(--glow); }
+    .btn { background: transparent; border: 2px solid var(--accent); color: var(--text); font-family: var(--font-main); font-weight: bold; padding: 10px 25px; border-radius: 30px; cursor: pointer; font-size: 1.2em; text-transform: uppercase; transition: all 0.2s; box-shadow: var(--glow); margin-top: 10px;}
     .btn:hover { background: var(--accent); color: #000; }
     .btn:disabled { border-color: #475569; color: #475569; box-shadow: none; cursor: not-allowed; background: transparent; }
 
@@ -46,39 +55,51 @@
     .imposteur-alert { color: #f43f5e; font-size: 2em; font-weight: bold; text-shadow: 0 0 20px #f43f5e; animation: pulse 1.5s infinite;}
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-    .turn-indicator { font-size: 1.5em; font-weight: bold; margin: 15px 0; }
+    .turn-indicator { font-size: 1.5em; font-weight: bold; margin: 10px 0; }
     #timerDisplay { font-size: 2.5em; font-weight: bold; color: var(--accent); text-shadow: var(--glow); }
     
-    #wordInputZone { margin-top: 20px; transition: 0.3s; }
-    .word-log { display: flex; flex-direction: column; gap: 10px; text-align: left; max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; border: 1px inset var(--glass-border); margin-top: 20px;}
-    .log-entry { display: flex; align-items: center; gap: 10px; font-size: 1.2em; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;}
-    .log-entry img { width: 35px; height: 35px; border-radius: 50%; }
-    .auto-word { color: #94a3b8; font-style: italic; font-size: 0.9em; }
+    #wordInputZone { margin-top: 15px; transition: 0.3s; }
+
+    /* LE CERCLE DES JOUEURS DYNAMIQUE */
+    #playersRing { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
+    .ring-player { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; }
+    .ring-player img { width: 65px; height: 65px; border-radius: 50%; border: 3px solid var(--glass-border); box-shadow: 0 4px 10px rgba(0,0,0,0.5); object-fit: cover; transition: all 0.3s; }
+    .ring-player.active-turn img { border-color: var(--accent); box-shadow: var(--glow); transform: scale(1.15); animation: bounce 1s infinite;}
+    @keyframes bounce { 0%, 100% { transform: scale(1.15) translateY(0); } 50% { transform: scale(1.15) translateY(-5px); } }
+    .ring-player span { font-weight: bold; font-size: 0.9em; background: rgba(0,0,0,0.6); padding: 2px 8px; border-radius: 8px; margin-top: 5px;}
+    
+    .speech-bubble { background: rgba(255,255,255,0.95); color: #000; padding: 8px 12px; border-radius: 12px; font-weight: bold; margin-bottom: 8px; font-size: 1em; max-width: 150px; text-align: center; word-wrap: break-word; box-shadow: 0 4px 10px rgba(0,0,0,0.5); opacity: 0; transform: translateY(10px); transition: all 0.3s ease; position: relative;}
+    .speech-bubble::after { content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); border-width: 8px 8px 0; border-style: solid; border-color: rgba(255,255,255,0.95) transparent transparent transparent; display: block; width: 0; }
+    .speech-bubble.show { opacity: 1; transform: translateY(0); }
 
     .vote-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 20px; }
     .vote-card { background: rgba(0,0,0,0.4); border: 2px solid var(--glass-border); padding: 15px; border-radius: 12px; cursor: pointer; transition: 0.2s; }
     .vote-card:hover { border-color: var(--accent); box-shadow: var(--glow); transform: scale(1.05); }
     .vote-card.selected { border-color: #22c55e; box-shadow: 0 0 15px #22c55e; background: rgba(34,197,94,0.2); }
 
+    footer { padding: 8px; background: var(--glass-bg); border-top: 1px solid var(--glass-border); display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; flex-shrink: 0; -webkit-overflow-scrolling: touch; backdrop-filter: blur(10px); z-index: 100;}
+    footer::-webkit-scrollbar { display: none; }
+    .theme-btn { border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 12px; font-weight: bold; font-family: var(--font-main); cursor: pointer; font-size: 0.9em; flex-shrink: 0; transition: 0.2s; }
+
     .hidden { display: none !important; }
     .shake-red { animation: shakeRed 0.4s; border-color: #ef4444 !important; }
     @keyframes shakeRed { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
   </style>
 </head>
-<body>
+<body class="theme-eternatos">
 
   <header>
     <h1>L'Imposteur</h1>
-    <!-- CORRECTION : Remplacement par une vraie fonction JS -->
     <button class="home-btn" onclick="goToHub()">🏠 Hub</button>
   </header>
 
   <div class="main-layout">
     
+    <!-- CERCLE DES JOUEURS (Affiché en jeu) -->
+    <div id="playersRing" class="hidden"></div>
+
     <div id="lobbyZone" class="glass-panel">
-      <h2>Rejoindre une Partie</h2>
-      <input type="text" id="usernameInput" placeholder="Votre Pseudo" value="Enquêteur">
-      <br>
+      <h2>Rejoindre l'Enquête</h2>
       <button class="btn" onclick="createRoom()">Héberger une Partie</button>
       <hr style="border-color: var(--glass-border); margin: 20px 0;">
       <input type="text" id="roomCodeInput" placeholder="Code Salon (ex: IMP-1234)">
@@ -95,7 +116,6 @@
       </div>
 
       <div id="playerList" class="player-list"></div>
-      <!-- CORRECTION : Lancement via une vraie fonction pour éviter l'erreur de socket -->
       <button id="startBtn" class="btn hidden" onclick="launchGame()">Démarrer (Min 3)</button>
       <p id="waitText">En attente du créateur...</p>
     </div>
@@ -113,7 +133,7 @@
         </div>
       </div>
 
-      <div class="turn-indicator">Tour de : <span id="activePlayerName" style="color:var(--accent);">Personne</span></div>
+      <div class="turn-indicator" id="turnIndicator">Tour de : <span id="activePlayerName" style="color:var(--accent);">Personne</span></div>
       <div id="timerDisplay">60</div>
 
       <div id="wordInputZone" class="hidden">
@@ -121,8 +141,6 @@
         <button class="btn" onclick="submitWord()">Envoyer</button>
         <p id="wordErrorMsg" style="color: #ef4444; font-weight: bold;" class="hidden">Mot interdit ! Temps réduit.</p>
       </div>
-
-      <div id="chatLog" class="word-log"></div>
     </div>
 
     <div id="votingZone" class="glass-panel hidden">
@@ -158,6 +176,16 @@
 
   </div>
 
+  <footer>
+    <button class="theme-btn" style="background:#00d2ff; color:#000" onclick="setTheme('theme-zekrom')">Zekrom</button>
+    <button class="theme-btn" style="background:#ff4500; color:#fff" onclick="setTheme('theme-reshiram')">Reshiram</button>
+    <button class="theme-btn" style="background:#9d4edd; color:#fff" onclick="setTheme('theme-lunala')">Lunala</button>
+    <button class="theme-btn" style="background:#d97706; color:#fff" onclick="setTheme('theme-heatran')">Heatran</button>
+    <button class="theme-btn" style="background:#8b5cf6; color:#fff" onclick="setTheme('theme-tenefix')">Ténéfix</button>
+    <button class="theme-btn" style="background:#f43f5e; color:#fff" onclick="setTheme('theme-eternatos')">Éthernatos</button>
+    <button class="theme-btn" style="background:#eab308; color:#000" onclick="setTheme('theme-brutalibre')">Brutalibré</button>
+  </footer>
+
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
@@ -165,43 +193,26 @@
     let isHost = false;
     let playersData = {};
     let selectedSuspectId = null;
+    let currentActivePlayerId = null;
+    let playerLatestWords = {}; // Stocke la dernière bulle de chaque joueur
     
-    const localName = localStorage.getItem('pokeauc_username');
-    if (localName) document.getElementById('usernameInput').value = localName;
-    const defaultAvatar = localStorage.getItem('pokeauc_avatar') || "https://play.pokemonshowdown.com/sprites/trainers/red.png";
+    const myName = localStorage.getItem('pokeauc_username') || 'Enquêteur';
+    const myAvatar = localStorage.getItem('pokeauc_avatar') || "https://play.pokemonshowdown.com/sprites/trainers/red.png";
 
     socket.on('connect', () => { myId = socket.id; });
+    function setTheme(t) { document.body.className = t; }
 
-    // --- CORRECTIONS DES BOUTONS ---
-    function goToHub() {
-      socket.emit('leaveRoom');
-      window.location.href = 'index.html';
-    }
-
-    function launchGame() {
-      socket.emit('startImposteurGame');
-    }
-    // -------------------------------
+    function goToHub() { socket.emit('leaveRoom'); window.location.href = 'index.html'; }
+    function launchGame() { socket.emit('startImposteurGame'); }
 
     function switchZone(id) {
       ['lobbyZone', 'waitingZone', 'gameZone', 'votingZone', 'counterAttackZone', 'roundEndZone'].forEach(z => document.getElementById(z).classList.add('hidden'));
       document.getElementById(id).classList.remove('hidden');
+      document.getElementById('playersRing').classList.toggle('hidden', id !== 'gameZone');
     }
 
-    function createRoom() {
-      const name = document.getElementById('usernameInput').value || 'Enquêteur';
-      localStorage.setItem('pokeauc_username', name);
-      socket.emit('createRoom', { name, avatar: defaultAvatar, gameType: 'imposteur' });
-    }
-
-    function joinRoom() {
-      const code = document.getElementById('roomCodeInput').value.trim();
-      const name = document.getElementById('usernameInput').value || 'Enquêteur';
-      if (code) {
-        localStorage.setItem('pokeauc_username', name);
-        socket.emit('joinRoom', { roomCode: code, name, avatar: defaultAvatar });
-      }
-    }
+    function createRoom() { socket.emit('createRoom', { name: myName, avatar: myAvatar, gameType: 'imposteur' }); }
+    function joinRoom() { const code = document.getElementById('roomCodeInput').value.trim(); if (code) { socket.emit('joinRoom', { roomCode: code, name: myName, avatar: myAvatar }); } }
 
     socket.on('errorMsg', (msg) => { alert(msg); });
 
@@ -227,22 +238,45 @@
 
     function updateSettings() {
       if(!isHost) return;
-      socket.emit('updateImpSettings', {
-        maxRounds: parseInt(document.getElementById('selRounds').value),
-        wordsPerPlayer: parseInt(document.getElementById('selWords').value)
+      socket.emit('updateImpSettings', { maxRounds: parseInt(document.getElementById('selRounds').value), wordsPerPlayer: parseInt(document.getElementById('selWords').value) });
+    }
+    
+    socket.on('impSettingsUpdated', (settings) => {
+      if(!isHost) { document.getElementById('selRounds').value = settings.maxRounds; document.getElementById('selWords').value = settings.wordsPerPlayer; }
+    });
+
+    // --- LE RENDU DYNAMIQUE DU CERCLE DES JOUEURS ---
+    function renderPlayersRing() {
+      const ring = document.getElementById('playersRing');
+      ring.innerHTML = '';
+      const players = Object.values(playersData).filter(p => p.connected);
+      const numPlayers = players.length;
+      
+      players.forEach((p, index) => {
+        // Calcul d'ellipse (Le centre de l'écran est libre pour la grosse carte)
+        const angle = (index / numPlayers) * (2 * Math.PI) - (Math.PI / 2);
+        const x = 50 + 40 * Math.cos(angle); // de 10% à 90%
+        const y = 50 + 40 * Math.sin(angle); // de 10% à 90%
+        
+        const isTurn = (p.id === currentActivePlayerId);
+        const latestWord = playerLatestWords[p.id];
+        
+        const bubbleHtml = latestWord ? `<div class="speech-bubble show">${latestWord}</div>` : `<div class="speech-bubble"></div>`;
+        
+        ring.innerHTML += `
+          <div class="ring-player ${isTurn ? 'active-turn' : ''}" style="left: ${x}%; top: ${y}%;">
+            ${bubbleHtml}
+            <img src="${p.avatar}">
+            <span>${p.name}</span>
+          </div>
+        `;
       });
     }
-    socket.on('impSettingsUpdated', (settings) => {
-      if(!isHost) {
-        document.getElementById('selRounds').value = settings.maxRounds;
-        document.getElementById('selWords').value = settings.wordsPerPlayer;
-      }
-    });
 
     socket.on('impRoundStarted', (data) => {
       playersData = data.players;
+      playerLatestWords = {};
       switchZone('gameZone');
-      document.getElementById('chatLog').innerHTML = '';
       
       if (data.isImposteur) {
         document.getElementById('imposteurView').classList.remove('hidden');
@@ -255,12 +289,14 @@
         document.getElementById('secretName').innerText = data.pokemon.name;
         document.getElementById('secretSprite').src = data.pokemon.sprite;
       }
+      renderPlayersRing();
     });
 
     socket.on('impNewTurn', (data) => {
+      currentActivePlayerId = data.activePlayerId;
       document.getElementById('timerDisplay').innerText = data.timeLeft;
       document.getElementById('timerDisplay').style.color = 'var(--accent)';
-      document.getElementById('activePlayerName').innerText = playersData[data.activePlayerId].name;
+      document.getElementById('turnIndicator').innerHTML = `Tour de : <span style="color:var(--accent);">${playersData[data.activePlayerId].name}</span>`;
       
       const isMe = (data.activePlayerId === myId);
       document.getElementById('wordInputZone').classList.toggle('hidden', !isMe);
@@ -269,6 +305,7 @@
         document.getElementById('wordInput').value = '';
         document.getElementById('wordInput').focus();
       }
+      renderPlayersRing(); // Mets à jour le joueur qui sautille
     });
 
     socket.on('impTimerUpdate', (time) => {
@@ -279,7 +316,10 @@
 
     function submitWord() {
       const w = document.getElementById('wordInput').value.trim();
-      if (w) socket.emit('submitImpWord', w);
+      if (w) {
+        socket.emit('submitImpWord', w);
+        document.getElementById('wordInput').value = '';
+      }
     }
 
     socket.on('impWordRejected', (data) => {
@@ -290,19 +330,25 @@
       setTimeout(() => input.classList.remove('shake-red'), 400);
     });
 
+    // Affichage des bulles !
     socket.on('impWordAccepted', (data) => {
-      const logZone = document.getElementById('chatLog');
-      const pName = playersData[data.playerId].name;
-      const pAv = playersData[data.playerId].avatar;
+      playerLatestWords[data.playerId] = data.word;
+      renderPlayersRing(); 
+    });
+
+    // LA FAMEUSE PAUSE DE 10 SECONDES AVANT LE VOTE
+    socket.on('impWaitBeforeVote', (data) => {
+      document.getElementById('turnIndicator').innerHTML = `<span style="color:#22c55e;">Fin des tours. Analysez les mots !</span>`;
+      document.getElementById('wordInputZone').classList.add('hidden');
+      document.getElementById('timerDisplay').style.color = '#22c55e';
       
-      logZone.innerHTML += `
-        <div class="log-entry">
-          <img src="${pAv}"> 
-          <strong>${pName}:</strong> 
-          <span class="${data.isAuto ? 'auto-word' : ''}">${data.word}</span>
-        </div>
-      `;
-      logZone.scrollTop = logZone.scrollHeight;
+      let t = data.delay;
+      document.getElementById('timerDisplay').innerText = t;
+      const iv = setInterval(() => {
+        t--;
+        document.getElementById('timerDisplay').innerText = t;
+        if(t <= 0) clearInterval(iv);
+      }, 1000);
     });
 
     socket.on('impStartVoting', () => {
@@ -348,12 +394,10 @@
 
     socket.on('impRoundEnd', (data) => {
       switchZone('roundEndZone');
-      
       document.getElementById('revealSprite').src = data.secretPoke.sprite;
       document.getElementById('revealName').innerText = data.secretPoke.name;
 
       const iWon = data.winners.includes(myId);
-
       document.getElementById('endRoundTitle').innerText = iWon ? "VICTOIRE !" : "DÉFAITE...";
       document.getElementById('endRoundTitle').style.color = iWon ? "#22c55e" : "#ef4444";
 
@@ -374,7 +418,6 @@
     socket.on('impGameOver', (data) => {
       setTimeout(() => { switchZone('waitingZone'); document.getElementById('startBtn').innerText = "Rejouer"; }, 6000);
     });
-
   </script>
 </body>
 </html>

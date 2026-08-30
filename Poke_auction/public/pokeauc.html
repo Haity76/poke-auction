@@ -22,16 +22,14 @@
     body.theme-brutalibre { --bg: radial-gradient(circle at 10% 10%, #422006, #1a0b02); --accent: #eab308; --text: #fefce8; --glow: 0 0 15px rgba(234, 179, 8, 0.4); }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
     body { font-family: var(--font-main); background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; height: 100dvh; transition: background 0.5s ease; overflow: hidden; }
     
-    header { padding: 10px; text-align: center; background: var(--glass-bg); border-bottom: 1px solid var(--glass-border); flex-shrink: 0; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+    header { padding: 10px; text-align: center; background: var(--glass-bg); border-bottom: 1px solid var(--glass-border); flex-shrink: 0; backdrop-filter: blur(10px); }
     h1 { margin: 0; font-size: 1.8em; color: var(--accent); font-weight: 700; letter-spacing: 2px; text-shadow: var(--glow); text-transform: uppercase;}
-    h2, h3 { color: var(--accent); text-transform: uppercase; letter-spacing: 1px; text-shadow: var(--glow); }
-
+    
     .main-layout { display: flex; flex: 1; overflow: hidden; width: 100%; }
 
-    .hub-return-btn { position: fixed; bottom: 55px; right: 20px; background: var(--glass-bg); border: 1px solid var(--accent); color: var(--text); font-family: var(--font-main); font-weight: bold; padding: 10px 16px; border-radius: 20px; cursor: pointer; font-size: 1.1em; z-index: 1000; backdrop-filter: blur(10px); transition: all 0.2s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+    .hub-return-btn { position: fixed; bottom: 55px; right: 20px; background: var(--glass-bg); border: 1px solid var(--accent); color: var(--text); font-weight: bold; padding: 10px 16px; border-radius: 20px; cursor: pointer; font-size: 1.1em; z-index: 1000; backdrop-filter: blur(10px); transition: all 0.2s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
     .hub-return-btn:hover { background: var(--accent); color: #000; transform: scale(1.05); }
 
     .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); }
@@ -43,44 +41,33 @@
     .poke-card-slot { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 12px; border: 1px solid var(--glass-border); position: relative; }
     .poke-card-slot img { width: 45px; height: 45px; }
     .item-badge { position: absolute; top: -5px; right: -5px; background: #eab308; color: #000; font-size: 0.7em; padding: 2px 6px; border-radius: 8px; font-weight: bold;}
-
     .rarity-Commun { border-color: #94a3b8 !important; }
     .rarity-Rare { border-color: #3b82f6 !important; box-shadow: 0 0 5px rgba(59,130,246,0.5); }
     .rarity-Épique { border-color: #a855f7 !important; box-shadow: 0 0 8px rgba(168,85,247,0.8); }
     .rarity-Légendaire { border-color: #eab308 !important; box-shadow: 0 0 15px rgba(234,179,8,0.8); }
 
-    /* NOUVEAU : STYLE POKÉMON K.O. DANS LE PANNEAU */
     .fainted-slot { filter: grayscale(100%); opacity: 0.6; border-color: #475569 !important; box-shadow: none !important; }
     .fainted-msg { color: #ef4444; font-size: 0.75em; font-weight: bold; text-transform: uppercase; background: rgba(0,0,0,0.7); padding: 2px 5px; border-radius: 4px; display: inline-block; margin-top: 2px; }
 
-    .stats-tooltip { display: none; position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%); background-color: var(--glass-bg); color: var(--text); border: 1px solid var(--accent); padding: 10px; border-radius: 8px; width: max-content; z-index: 100; font-size: 0.9em; box-shadow: 0 4px 10px rgba(0,0,0,0.6); pointer-events: none; text-align: left; line-height: 1.4; backdrop-filter: blur(10px); }
+    .stats-tooltip { display: none; position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%); background-color: var(--glass-bg); color: var(--text); border: 1px solid var(--accent); padding: 10px; border-radius: 8px; width: max-content; z-index: 100; font-size: 0.9em; box-shadow: 0 4px 10px rgba(0,0,0,0.6); pointer-events: none; text-align: left; }
     .poke-card-slot:hover .stats-tooltip { display: block; }
 
     .center-content { flex: 1; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow-y: auto; width: 100%; }
     .card { padding: 20px; width: 100%; max-width: 600px; text-align: center; border-radius: 16px; }
 
     .btn { background: transparent; border: 2px solid var(--accent); color: var(--text); font-family: var(--font-main); font-weight: bold; padding: 10px 20px; border-radius: 30px; cursor: pointer; font-size: 1.1em; margin: 5px; text-transform: uppercase; transition: all 0.2s ease; box-shadow: var(--glow); text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
-    .btn:active { transform: scale(0.95); }
     .btn:hover { background: var(--accent); color: #000; text-shadow: none; }
     
     input { padding: 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3); color: var(--text); text-align: center; margin: 5px; width: 85%; max-width: 280px; font-size: 1em; font-family: var(--font-main); }
-    input:focus { outline: none; border-color: var(--accent); box-shadow: var(--glow); }
-
-    .avatar-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 15px 0; max-height: 160px; overflow-y: auto; padding: 5px; border: 1px inset var(--glass-border); border-radius: 12px; background: rgba(0,0,0,0.2); }
-    .avatar-grid::-webkit-scrollbar { width: 6px; }
-    .avatar-grid::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
-    .avatar-option { width: 55px; height: 55px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; padding: 2px; margin: auto; object-fit: cover; transition: all 0.2s; }
-    .avatar-option.selected { border-color: var(--accent); transform: scale(1.1); box-shadow: var(--glow); }
 
     .shop-scene { background: rgba(0, 0, 0, 0.4); border: 1px solid var(--accent); padding: 15px; border-radius: 16px; box-shadow: inset 0 0 20px rgba(234, 88, 12, 0.2); }
     .shop-items-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0; }
     .shop-item { position: relative; background: rgba(0,0,0,0.5); padding: 10px 5px; border-radius: 10px; cursor: pointer; border: 1px solid var(--glass-border); font-size: 0.9em; transition: all 0.2s; }
     .shop-item.selected { border-color: #22c55e; background: rgba(34,197,94,0.3); box-shadow: 0 0 10px rgba(34,197,94,0.5); }
-    .item-tooltip { display: none; position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%); background-color: var(--glass-bg); color: var(--text); border: 1px solid var(--accent); padding: 8px; border-radius: 8px; width: 180px; z-index: 100; font-size: 0.9em; box-shadow: 0 4px 10px rgba(0,0,0,0.6); pointer-events: none; text-align: center; backdrop-filter: blur(10px); }
+    .item-tooltip { display: none; position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%); background-color: var(--glass-bg); color: var(--text); border: 1px solid var(--accent); padding: 8px; border-radius: 8px; width: 180px; z-index: 100; font-size: 0.9em; pointer-events: none; text-align: center; backdrop-filter: blur(10px); }
     .shop-item:hover .item-tooltip { display: block; }
     .poke-select-grid { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
     .poke-select-btn { background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); border-radius: 10px; padding: 6px; cursor: pointer; color: var(--text); width: 80px; transition: all 0.2s; }
-    .poke-select-btn:hover { border-color: var(--accent); }
     .instruction-banner { background: rgba(0,0,0,0.3); border: 1px dashed var(--accent); padding: 10px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; font-size: 1em; color: var(--accent); }
 
     .battle-scene { position: relative; width: 100%; height: 250px; border-radius: 12px; border: 1px solid var(--glass-border); overflow: hidden; margin-bottom: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
@@ -104,36 +91,33 @@
     .is-defender img { top: -5px; right: 25px; height: 85px; }
     .is-defender .hud { top: -15px; right: 130px; }
 
-    /* NOUVELLES ANIMATIONS DE COMBAT (GAME JUICE) */
     @keyframes shake { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-4px, 3px); } 75% { transform: translate(4px, -3px); } }
     .shake { animation: shake 0.35s; }
     @keyframes damageFlash { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(0.4) sepia(1) saturate(6) hue-rotate(-50deg); } }
     .flash-damage { animation: damageFlash 0.35s; }
-    
     @keyframes idleSprite { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
     .sprite-idle { animation: idleSprite 2.5s ease-in-out infinite; }
 
     .floating-text { position: absolute; color: #ff3333; font-weight: 900; font-size: 2em; text-shadow: 2px 2px 0 #000; z-index: 10; pointer-events: none; animation: floatUp 1s forwards; }
     @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-45px) scale(1.2); } }
 
-    /* NOUVELLE BARRE DE VIE SUPERPOSÉE (Vert sur Rouge) */
     .hp-bar-bg { position: relative; background: #334155; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 5px; border: 1px solid #000; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
     .hp-bar-trail { position: absolute; top: 0; left: 0; height: 100%; background: #ef4444; transition: width 1.2s ease-out; z-index: 1; }
     .hp-bar-fill { position: absolute; top: 0; left: 0; height: 100%; background: #22c55e; transition: width 0.2s ease-out; z-index: 2; border-right: 1px solid rgba(255,255,255,0.4); }
 
-    .battle-log { background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); padding: 10px; border-radius: 8px; color: var(--accent); font-weight: bold; margin-bottom: 10px; font-size: 1em; min-height: 42px; display: flex; align-items: center; justify-content: center; text-shadow: 1px 1px 2px #000; }
+    .battle-log { background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); padding: 10px; border-radius: 8px; color: var(--accent); font-weight: bold; margin-bottom: 10px; font-size: 1em; min-height: 42px; display: flex; align-items: center; justify-content: center; }
 
-    footer { padding: 8px; background: var(--glass-bg); border-top: 1px solid var(--glass-border); display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; flex-shrink: 0; -webkit-overflow-scrolling: touch; backdrop-filter: blur(10px); }
+    footer { padding: 8px; background: var(--glass-bg); border-top: 1px solid var(--glass-border); display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; flex-shrink: 0; -webkit-overflow-scrolling: touch; }
     footer::-webkit-scrollbar { display: none; }
     .theme-btn { border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff; padding: 6px 12px; border-radius: 12px; font-weight: bold; font-family: var(--font-main); cursor: pointer; font-size: 0.9em; flex-shrink: 0; transition: 0.2s; }
-    .theme-btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
+    .theme-btn:hover { background: var(--accent); color: #000; }
 
-    #disconnectOverlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; backdrop-filter: blur(5px); }
+    #disconnectOverlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
     .hidden { display: none !important; }
 
     @media (max-width: 768px) {
       .main-layout { flex-direction: column; }
-      .team-panel, .glass-panel.team-panel { width: 100%; height: auto; max-height: 90px; flex-direction: row; padding: 8px 12px; gap: 10px; border: none; border-bottom: 1px solid var(--glass-border); flex-shrink: 0; border-radius: 0; }
+      .team-panel { width: 100%; height: auto; max-height: 90px; flex-direction: row; padding: 8px 12px; gap: 10px; border: none; border-bottom: 1px solid var(--glass-border); flex-shrink: 0; border-radius: 0; }
       .team-panel .profile-header { border-bottom: none; border-right: 1px solid var(--accent); padding-bottom: 0; padding-right: 10px; }
       .team-panel .profile-header img { width: 40px; height: 40px; }
       .team-panel > div:last-child { display: flex; flex-direction: row; gap: 8px; overflow-x: auto; flex: 1; align-items: center; }
@@ -141,10 +125,8 @@
       .poke-card-slot img { width: 35px; height: 35px; }
       .center-content { padding: 10px; justify-content: flex-start; }
       .card { padding: 15px; border-radius: 16px; }
-      .shop-items-grid { grid-template-columns: repeat(2, 1fr); }
       .is-attacker .hud { left: auto; right: 10px; bottom: 5px; width: 130px; }
       .is-defender .hud { right: auto; left: 10px; top: 10px; width: 130px; }
-      h1 { font-size: 1.5em; }
       .hub-return-btn { bottom: 55px; right: 10px; padding: 8px 12px; font-size: 1em; }
     }
   </style>
@@ -175,42 +157,17 @@
     <div class="center-content">
       
       <div id="disconnectOverlay" class="hidden">
-        <h2 style="color: #ef4444; margin: 0 0 10px 0; text-shadow: 0 0 10px #ef4444;">Adversaire déconnecté !</h2>
+        <h2 style="color: #ef4444; margin: 0 0 10px 0;">Adversaire déconnecté !</h2>
         <p style="font-size: 1.2em;">Retour au menu dans :</p>
-        <div id="decoTimer" style="font-size: 4em; font-weight: bold; color: var(--accent); text-shadow: var(--glow);">20</div>
+        <div id="decoTimer" style="font-size: 4em; font-weight: bold; color: var(--accent);">20</div>
       </div>
 
+      <!-- LOBBY : NETTOYÉ DE LA SÉLECTION D'AVATARS -->
       <div id="lobbyZone" class="card glass-panel">
         <h2>Entrez dans l'Arène</h2>
-        <input type="text" id="usernameInput" placeholder="Votre Pseudo" value="Dresseur">
-        <p style="margin: 15px 0 5px 0; font-size: 1.1em; font-weight: bold;">Choisissez votre Dresseur :</p>
-        
-        <div class="avatar-grid">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/red.png" class="avatar-option selected" title="Red" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/leaf.png" class="avatar-option" title="Leaf" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/ethan.png" class="avatar-option" title="Luth" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/lyra.png" class="avatar-option" title="Célesta" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/kris.png" class="avatar-option" title="Christy" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/brendan.png" class="avatar-option" title="Brice" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/may.png" class="avatar-option" title="Flora" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/lucas.png" class="avatar-option" title="Louka" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/dawn.png" class="avatar-option" title="Aurore" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/hilbert.png" class="avatar-option" title="Ludwig" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/hilda.png" class="avatar-option" title="Ludvina" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/nate.png" class="avatar-option" title="Mélis" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/rosa.png" class="avatar-option" title="Écho" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/calem.png" class="avatar-option" title="Kalem" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/serena.png" class="avatar-option" title="Serena" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/elio.png" class="avatar-option" title="Elio" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/selene.png" class="avatar-option" title="Selene" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/victor.png" class="avatar-option" title="Victor" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/gloria.png" class="avatar-option" title="Gloria" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/florian.png" class="avatar-option" title="Florian" onclick="selectAvatar(this)">
-          <img src="https://play.pokemonshowdown.com/sprites/trainers/juliana.png" class="avatar-option" title="Juliana" onclick="selectAvatar(this)">
-        </div>
-
+        <p style="font-size: 1.1em; opacity: 0.8; margin-bottom: 20px;">(Votre profil est géré depuis le Hub Central)</p>
         <button class="btn" onclick="createRoom()">Créer un Salon</button>
-        <hr style="border-color: var(--glass-border); margin: 15px 0;">
+        <hr style="border-color: var(--glass-border); margin: 20px 0;">
         <input type="text" id="roomCodeInput" placeholder="Code (ex: PKM-1234)">
         <button class="btn" onclick="joinRoom()">Rejoindre Salon</button>
       </div>
@@ -230,10 +187,10 @@
 
       <div id="auctionZone" class="card glass-panel hidden">
         <h2 style="margin: 0;">Enchère en cours</h2>
-        <p id="pokeRarity" style="font-weight: bold; padding: 6px 12px; border-radius: 8px; display: inline-block; background: rgba(0,0,0,0.5); font-size: 1em; margin: 10px 0; border: 1px solid var(--glass-border);"></p>
-        <p id="pokeHint" style="font-size: 1.6em; font-weight: 700; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin: 10px 0; border: 1px solid var(--glass-border);">???</p>
-        <div style="font-size: 3.5em; color: #ef4444; font-weight: bold; text-shadow: 0 0 15px rgba(239, 68, 68, 0.6);" id="timer">12</div>
-        <p style="font-size: 1.2em; margin: 10px 0;">Mise max : <strong id="highestBid" style="color: var(--accent); text-shadow: var(--glow); font-size: 1.4em;">0</strong> 🪙 (<span id="highestBidder">Personne</span>)</p>
+        <p id="pokeRarity" style="font-weight: bold; padding: 6px 12px; border-radius: 8px; display: inline-block; font-size: 1em; margin: 10px 0; border: 1px solid var(--glass-border);"></p>
+        <p id="pokeHint" style="font-size: 1.6em; font-weight: 700; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin: 10px 0;">???</p>
+        <div style="font-size: 3.5em; color: #ef4444; font-weight: bold;" id="timer">12</div>
+        <p style="font-size: 1.2em; margin: 10px 0;">Mise max : <strong id="highestBid" style="color: var(--accent);">0</strong> 🪙 (<span id="highestBidder">Personne</span>)</p>
         <button class="btn" onclick="placeBid()">Miser +50 🪙</button>
       </div>
 
@@ -241,10 +198,10 @@
         <div id="shopContent">
           <h2 style="margin:0 0 10px 0;">Centre Pokémon</h2>
           <div class="instruction-banner">👉 1. Touchez un objet<br>👉 2. Touchez votre Pokémon pour équiper !</div>
-          <button class="btn" style="border-color: #eab308; color: #eab308; font-size: 0.9em; padding: 8px 15px; box-shadow: 0 0 10px rgba(234, 179, 8, 0.4);" onclick="selectShopAction('reroll', this)">Lootbox Échange (150 🪙)</button>
+          <button class="btn" style="border-color: #eab308; color: #eab308; font-size: 0.9em; padding: 8px 15px;" onclick="selectShopAction('reroll', this)">Lootbox Échange (150 🪙)</button>
           <div id="shopItemsContainer" class="shop-items-grid"></div>
           <div id="shopTeamContainer" class="poke-select-grid"></div>
-          <button class="btn" style="margin-top:15px; border-color: #22c55e; color: #22c55e; box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);" onclick="setShopReady()">Prêt au combat !</button>
+          <button class="btn" style="margin-top:15px; border-color: #22c55e; color: #22c55e;" onclick="setShopReady()">Prêt au combat !</button>
         </div>
         <div id="shopWaiting" class="hidden">
           <h2 style="color: var(--accent); margin-top: 30px; margin-bottom: 30px;">En attente de l'adversaire...</h2>
@@ -253,36 +210,30 @@
 
       <div id="battleZone" class="card glass-panel hidden" style="padding: 15px;">
         <div id="arenaScene" class="battle-scene arena-stadium">
-          
           <div id="p1Wrapper" class="poke-wrapper is-attacker">
             <div class="slot"></div>
-            <!-- L'image a désormais une classe sprite-idle -->
             <img id="p1SpriteAnim" src="" class="sprite-idle">
             <div class="hud">
               <strong id="p1NameAnim" style="font-size: 1em;">P1</strong>
               <div id="p1HpTextAnim" style="font-size: 0.9em; font-weight: bold;"></div>
-              <!-- La nouvelle barre de vie avec le "Trail" (Tracée rouge) -->
               <div class="hp-bar-bg">
                 <div id="p1HpBarTrailAnim" class="hp-bar-trail"></div>
                 <div id="p1HpBarAnim" class="hp-bar-fill"></div>
               </div>
             </div>
           </div>
-
           <div id="p2Wrapper" class="poke-wrapper is-defender">
             <div class="slot"></div>
             <img id="p2SpriteAnim" src="" class="sprite-idle">
             <div class="hud">
               <strong id="p2NameAnim" style="font-size: 1em;">P2</strong>
               <div id="p2HpTextAnim" style="font-size: 0.9em; font-weight: bold;"></div>
-              <!-- La nouvelle barre de vie avec le "Trail" (Tracée rouge) -->
               <div class="hp-bar-bg">
                 <div id="p2HpBarTrailAnim" class="hp-bar-trail"></div>
                 <div id="p2HpBarAnim" class="hp-bar-fill"></div>
               </div>
             </div>
           </div>
-
         </div>
 
         <div id="battleLog" class="battle-log">Préparation...</div>
@@ -329,17 +280,13 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const navEntries = performance.getEntriesByType("navigation");
-    if (navEntries.length > 0 && navEntries[0].type === "reload") {
-      window.location.href = 'index.html';
-    } else if (performance.navigation && performance.navigation.type === 1) {
-      window.location.href = 'index.html';
-    }
-
     const socket = io();
     let mySocketId = null;
     let myRole = 'spectator';
-    let selectedAvatarUrl = "https://play.pokemonshowdown.com/sprites/trainers/red.png";
+    
+    // Récupération automatique depuis le Hub Central
+    const myName = localStorage.getItem('pokeauc_username') || 'Dresseur';
+    const myAvatarUrl = localStorage.getItem('pokeauc_avatar') || "https://play.pokemonshowdown.com/sprites/trainers/red.png";
     let activeShopAction = null; 
     let decoInterval = null;
 
@@ -353,40 +300,16 @@
       if (currentTrack === bgm[trackName]) return;
       if (currentTrack) currentTrack.pause();
       currentTrack = bgm[trackName];
-      if (currentTrack) { currentTrack.currentTime = 0; currentTrack.play().catch(e => console.log("Attente action joueur.")); }
-    }
-
-    window.onload = () => {
-      const savedName = localStorage.getItem('pokeauc_username');
-      const savedAvatar = localStorage.getItem('pokeauc_avatar');
-      if (savedName) document.getElementById('usernameInput').value = savedName;
-      if (savedAvatar) {
-        selectedAvatarUrl = savedAvatar;
-        document.querySelectorAll('.avatar-option').forEach(img => {
-          img.classList.remove('selected');
-          if (img.src === savedAvatar) img.classList.add('selected');
-        });
-      }
-    };
-
-    function saveProfile() {
-      localStorage.setItem('pokeauc_username', document.getElementById('usernameInput').value || 'Dresseur');
-      localStorage.setItem('pokeauc_avatar', selectedAvatarUrl);
+      if (currentTrack) { currentTrack.currentTime = 0; currentTrack.play().catch(e => {}); }
     }
 
     socket.on('connect', () => { mySocketId = socket.id; });
     function setTheme(t) { document.body.className = t; }
-    function selectAvatar(el) {
-      document.querySelectorAll('.avatar-option').forEach(img => img.classList.remove('selected'));
-      el.classList.add('selected');
-      selectedAvatarUrl = el.src;
-    }
     
-    function createRoom() { saveProfile(); playMusic('lobby'); socket.emit('createRoom', { name: document.getElementById('usernameInput').value || 'Dresseur', avatar: selectedAvatarUrl, gameType: 'pokeauc' }); }
+    function createRoom() { playMusic('lobby'); socket.emit('createRoom', { name: myName, avatar: myAvatarUrl, gameType: 'pokeauc' }); }
     function joinRoom() { 
       const code = document.getElementById('roomCodeInput').value.trim();
-      const name = document.getElementById('usernameInput').value || 'Dresseur';
-      if (code) { saveProfile(); playMusic('lobby'); socket.emit('joinRoom', { roomCode: code, name, avatar: selectedAvatarUrl }); }
+      if (code) { playMusic('lobby'); socket.emit('joinRoom', { roomCode: code, name: myName, avatar: myAvatarUrl }); }
     }
     
     function goToHub() { socket.emit('leaveRoom'); window.location.href = 'index.html'; }
@@ -401,7 +324,6 @@
         if(time <= 0) { clearInterval(decoInterval); goToHub(); }
       }, 1000);
     });
-    
     socket.on('playerReconnected', () => { document.getElementById('disconnectOverlay').classList.add('hidden'); if(decoInterval) clearInterval(decoInterval); });
 
     socket.on('roomCreated', (data) => { myRole = data.role; switchZone('waitingZone'); updateBadges(data.roomCode); });
@@ -473,28 +395,22 @@
 
     function setShopReady() { socket.emit('setShopReady'); document.getElementById('shopContent').classList.add('hidden'); document.getElementById('shopWaiting').classList.remove('hidden'); }
 
-    // === GESTION DU COMBAT ET ANIMATIONS ===
     socket.on('battleUpdate', (data) => {
       if (document.getElementById('battleZone').classList.contains('hidden')) playMusic('battle');
       switchZone('battleZone');
-      
-      // MISE A JOUR DES PANNEAUX LATERAUX EN DIRECT !
       if (data.players) renderTeams(data.players);
 
       const b = data.battle;
       const p1Team = data.players[b.p1.id].team;
       const p2Team = data.players[b.p2.id].team;
-      
       const p1Data = p1Team[b.p1ActiveIndex];
       const p2Data = p2Team[b.p2ActiveIndex];
       const isP1Attacker = (b.attackerId === b.p1.id);
       
       document.getElementById('arenaScene').className = `battle-scene arena-${b.arena}`;
-
       document.getElementById('p1NameAnim').innerText = `${p1Data.name} (${b.p1.name})`;
       document.getElementById('p1HpTextAnim').innerText = `${p1Data.hp}/${p1Data.hpMax} PV`;
       
-      // ANIMATION DE LA BARRE P1 (Le CSS fait le travail magique du vert/rouge)
       const p1HpPercent = Math.max(0, (p1Data.hp / p1Data.hpMax) * 100);
       document.getElementById('p1HpBarAnim').style.width = `${p1HpPercent}%`;
       document.getElementById('p1HpBarTrailAnim').style.width = `${p1HpPercent}%`;
@@ -505,7 +421,6 @@
       document.getElementById('p2NameAnim').innerText = `${p2Data.name} (${b.p2.name})`;
       document.getElementById('p2HpTextAnim').innerText = `${p2Data.hp}/${p2Data.hpMax} PV`;
       
-      // ANIMATION DE LA BARRE P2
       const p2HpPercent = Math.max(0, (p2Data.hp / p2Data.hpMax) * 100);
       document.getElementById('p2HpBarAnim').style.width = `${p2HpPercent}%`;
       document.getElementById('p2HpBarTrailAnim').style.width = `${p2HpPercent}%`;
@@ -515,7 +430,6 @@
 
       document.getElementById('battleLog').innerText = data.log;
       
-      // On s'assure que les sprites ont bien l'animation "idle"
       document.getElementById('p1SpriteAnim').classList.add('sprite-idle');
       document.getElementById('p2SpriteAnim').classList.add('sprite-idle');
 
@@ -525,25 +439,18 @@
         const imgEl = document.getElementById(targetPrefix + 'SpriteAnim');
         const wrapperEl = document.getElementById(targetPrefix + 'Wrapper');
 
-        // On retire l'idle pour que le shake fonctionne bien
         imgEl.classList.remove('sprite-idle', 'flash-damage', 'shake');
-        void imgEl.offsetWidth; // Force le navigateur à recalculer
+        void imgEl.offsetWidth; 
         imgEl.classList.add('flash-damage', 'shake');
 
-        // On remet l'idle après le coup
-        setTimeout(() => {
-          imgEl.classList.remove('flash-damage', 'shake');
-          imgEl.classList.add('sprite-idle');
-        }, 1200);
+        setTimeout(() => { imgEl.classList.remove('flash-damage', 'shake'); imgEl.classList.add('sprite-idle'); }, 1200);
 
-        // Texte flottant rouge
         const floating = document.createElement('div');
         floating.className = 'floating-text';
         floating.innerText = `-${b.lastDamage.amount}`;
         floating.style.left = `calc(50% + ${Math.random()*20 - 10}px)`;
         floating.style.top = '10px';
         wrapperEl.appendChild(floating);
-
         setTimeout(() => { if(floating.parentNode) floating.remove(); }, 1200);
       }
 
@@ -567,7 +474,6 @@
       }
     });
 
-    // === GESTION DU GRISONNEMENT K.O. ===
     function renderTeams(players) {
       const keys = Object.keys(players);
       const myKey = keys.find(k => k === mySocketId) || keys[0];
@@ -582,10 +488,7 @@
         document.getElementById('myTeam').innerHTML = me.team.map(p => {
           const isFainted = p.hp <= 0;
           const faintedClass = isFainted ? 'fainted-slot' : '';
-          const hpDisplay = isFainted 
-            ? `<div class="fainted-msg">Plus capable de se battre</div>` 
-            : `<small style="font-weight:bold;">${p.hp}/${p.hpMax} PV</small>`;
-            
+          const hpDisplay = isFainted ? `<div class="fainted-msg">Plus capable de se battre</div>` : `<small style="font-weight:bold;">${p.hp}/${p.hpMax} PV</small>`;
           return `
           <div class="poke-card-slot rarity-${p.rarity} ${faintedClass}">
             <img src="${p.sprite}"/>
@@ -594,8 +497,7 @@
             <div class="stats-tooltip">
               <strong style="color:var(--accent);">Stats (Lvl 50)</strong><br>
               ⚔️ Atk: ${p.attack} | 🛡️ Def: ${p.def}<br>
-              🔮 SpA: ${p.spAtk} | 🧿 SpD: ${p.spDef}<br>
-              💨 Vit: ${p.speed}
+              🔮 SpA: ${p.spAtk} | 🧿 SpD: ${p.spDef}
             </div>
           </div>`;
         }).join('');
@@ -610,10 +512,7 @@
         document.getElementById('opponentTeam').innerHTML = opp.team.map(p => {
           const isFainted = p.hp <= 0;
           const faintedClass = isFainted ? 'fainted-slot' : '';
-          const hpDisplay = isFainted 
-            ? `<div class="fainted-msg">Plus capable de se battre</div>` 
-            : `<small style="font-weight:bold;">${p.hp}/${p.hpMax} PV</small>`;
-            
+          const hpDisplay = isFainted ? `<div class="fainted-msg">Plus capable de se battre</div>` : `<small style="font-weight:bold;">${p.hp}/${p.hpMax} PV</small>`;
           return `
           <div class="poke-card-slot rarity-${p.rarity} ${faintedClass}">
             <img src="${p.sprite}"/>
@@ -622,8 +521,7 @@
             <div class="stats-tooltip">
               <strong style="color:var(--accent);">Stats (Lvl 50)</strong><br>
               ⚔️ Atk: ${p.attack} | 🛡️ Def: ${p.def}<br>
-              🔮 SpA: ${p.spAtk} | 🧿 SpD: ${p.spDef}<br>
-              💨 Vit: ${p.speed}
+              🔮 SpA: ${p.spAtk} | 🧿 SpD: ${p.spDef}
             </div>
           </div>`;
         }).join('');

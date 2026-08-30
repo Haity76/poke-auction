@@ -204,6 +204,9 @@ io.on('connection', (socket) => {
     }
   });
 
+  // ==========================================
+  // JEU 1 : POKEAUC
+  // ==========================================
   socket.on('voteMode', (mode) => {
     const room = rooms[currentRoom];
     if (!room || room.state !== 'VOTING' || room.gameType !== 'pokeauc') return;
@@ -290,6 +293,9 @@ io.on('connection', (socket) => {
     }
   });
 
+  // ==========================================
+  // JEU 2 : L'IMPOSTEUR 
+  // ==========================================
   socket.on('updateImpSettings', (settings) => {
     const room = rooms[currentRoom];
     if (room && room.host === socket.id && room.gameType === 'imposteur') {
@@ -301,7 +307,6 @@ io.on('connection', (socket) => {
   socket.on('startImposteurGame', async () => {
     const room = rooms[currentRoom];
     if (!room || room.host !== socket.id || room.gameType !== 'imposteur') return;
-    
     Object.values(room.players).forEach(p => p.score = 0);
     room.impState.round = 1;
     await startImposteurRound(currentRoom);
@@ -322,7 +327,7 @@ io.on('connection', (socket) => {
       socket.emit('impWordRejected', { msg: "Mot interdit ou trop proche du nom !", timeLeft: room.impState.timeLeft });
       if (room.impState.timeLeft <= 0) {
         clearInterval(room.impState.timer);
-        handleAutoWord(currentRoom, activePlayerId);
+        acceptWordAndNextTurn(currentRoom, activePlayerId, "⏳ (Temps écoulé)", true);
       }
       return;
     }
@@ -542,20 +547,20 @@ function sendBattleUpdateToSocket(socketId, roomCode, logMsg) {
   io.to(socketId).emit('battleUpdate', { battle: b, players: room.players, log: logMsg, gameState: room.state });
 }
 
-// CORRECTION MINEURE : Sécurité anti-crash pour l'API Pokémon ajoutée ici
+// ==========================================
+// IMPOSTEUR LOGIQUE DÉTAILLÉE
+// ==========================================
+
 async function startImposteurRound(roomCode) {
   const room = rooms[roomCode];
   room.state = 'PLAYING';
   
   let poke = await getRandomPokemon();
   let failSafe = 0;
-  while(!poke && failSafe < 5) {
-    poke = await getRandomPokemon();
-    failSafe++;
-  }
+  while(!poke && failSafe < 5) { poke = await getRandomPokemon(); failSafe++; }
   
   if (!poke) {
-    io.to(roomCode).emit('errorMsg', "Erreur de connexion à l'API Pokémon. Veuillez relancer la partie.");
+    io.to(roomCode).emit('errorMsg', "Erreur de connexion à l'API Pokémon. Veuillez relancer.");
     room.state = 'LOBBY';
     return;
   }
@@ -599,17 +604,9 @@ function startImposteurTurn(roomCode) {
     
     if (room.impState.timeLeft <= 0) {
       clearInterval(room.impState.timer);
-      handleAutoWord(roomCode, activePlayerId);
+      acceptWordAndNextTurn(roomCode, activePlayerId, "⏳ (Temps écoulé)", true);
     }
   }, 1000);
-}
-
-function handleAutoWord(roomCode, playerId) {
-  const room = rooms[roomCode];
-  const p = room.impState.secretPoke;
-  const hints = [`Type: ${p.types}`, `Couleur: ${p.color}`, `Taille: ${p.height/10}m`, `Poids: ${p.weight/10}kg`];
-  const randomHint = hints[Math.floor(Math.random() * hints.length)] + " (Auto)";
-  acceptWordAndNextTurn(roomCode, playerId, randomHint, true);
 }
 
 function acceptWordAndNextTurn(roomCode, playerId, word, isAuto) {
@@ -623,11 +620,13 @@ function acceptWordAndNextTurn(roomCode, playerId, word, isAuto) {
     room.impState.currentTurnIdx = 0;
     room.impState.currentWordLap++;
     
+    // DELAI DE 10 SECONDES AVANT LE VOTE
     if (room.impState.currentWordLap > room.impSettings.wordsPerPlayer) {
-      return startImposteurVoting(roomCode);
+      io.to(roomCode).emit('impWaitBeforeVote', { delay: 10 });
+      setTimeout(() => startImposteurVoting(roomCode), 10000);
+      return;
     }
   }
-  
   setTimeout(() => startImposteurTurn(roomCode), 2000);
 }
 
