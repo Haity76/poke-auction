@@ -117,7 +117,7 @@
 
     @media (max-width: 768px) {
       .main-layout { flex-direction: column; }
-      .team-panel { width: 100%; height: auto; max-height: 90px; flex-direction: row; padding: 8px 12px; gap: 10px; border: none; border-bottom: 1px solid var(--glass-border); flex-shrink: 0; border-radius: 0; }
+      .team-panel, .glass-panel.team-panel { width: 100%; height: auto; max-height: 90px; flex-direction: row; padding: 8px 12px; gap: 10px; border: none; border-bottom: 1px solid var(--glass-border); flex-shrink: 0; border-radius: 0; }
       .team-panel .profile-header { border-bottom: none; border-right: 1px solid var(--accent); padding-bottom: 0; padding-right: 10px; }
       .team-panel .profile-header img { width: 40px; height: 40px; }
       .team-panel > div:last-child { display: flex; flex-direction: row; gap: 8px; overflow-x: auto; flex: 1; align-items: center; }
@@ -141,7 +141,6 @@
   </header>
 
   <div class="main-layout">
-    <!-- PANEL JOUEUR LOCAL -->
     <div class="team-panel glass-panel">
       <div class="profile-header">
         <img id="myAvatar" src="https://play.pokemonshowdown.com/sprites/trainers/red.png">
@@ -153,7 +152,6 @@
       <div id="myTeam"></div>
     </div>
 
-    <!-- ZONE CENTRALE -->
     <div class="center-content">
       
       <div id="disconnectOverlay" class="hidden">
@@ -162,11 +160,14 @@
         <div id="decoTimer" style="font-size: 4em; font-weight: bold; color: var(--accent);">20</div>
       </div>
 
-      <!-- LOBBY : NETTOYÉ DE LA SÉLECTION D'AVATARS -->
       <div id="lobbyZone" class="card glass-panel">
         <h2>Entrez dans l'Arène</h2>
         <p style="font-size: 1.1em; opacity: 0.8; margin-bottom: 20px;">(Votre profil est géré depuis le Hub Central)</p>
-        <button class="btn" onclick="createRoom()">Créer un Salon</button>
+        
+        <!-- NOUVEAU BOUTON : JOUER EN SOLO -->
+        <button class="btn" style="background:#38bdf8; color:#000;" onclick="createSoloRoom()">🤖 Jouer en Solo (vs IA)</button><br>
+        
+        <button class="btn" style="margin-top:15px;" onclick="createRoom()">Créer un Salon (Multi)</button>
         <hr style="border-color: var(--glass-border); margin: 20px 0;">
         <input type="text" id="roomCodeInput" placeholder="Code (ex: PKM-1234)">
         <button class="btn" onclick="joinRoom()">Rejoindre Salon</button>
@@ -280,11 +281,17 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    const navEntries = performance.getEntriesByType("navigation");
+    if (navEntries.length > 0 && navEntries[0].type === "reload") {
+      window.location.href = 'index.html';
+    } else if (performance.navigation && performance.navigation.type === 1) {
+      window.location.href = 'index.html';
+    }
+
     const socket = io();
     let mySocketId = null;
     let myRole = 'spectator';
     
-    // Récupération automatique depuis le Hub Central
     const myName = localStorage.getItem('pokeauc_username') || 'Dresseur';
     const myAvatarUrl = localStorage.getItem('pokeauc_avatar') || "https://play.pokemonshowdown.com/sprites/trainers/red.png";
     let activeShopAction = null; 
@@ -305,6 +312,9 @@
 
     socket.on('connect', () => { mySocketId = socket.id; });
     function setTheme(t) { document.body.className = t; }
+    
+    // LA FONCTION DU BOUTON SOLO !
+    function createSoloRoom() { playMusic('lobby'); socket.emit('createSoloRoom', { name: myName, avatar: myAvatarUrl }); }
     
     function createRoom() { playMusic('lobby'); socket.emit('createRoom', { name: myName, avatar: myAvatarUrl, gameType: 'pokeauc' }); }
     function joinRoom() { 
