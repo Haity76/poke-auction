@@ -918,16 +918,38 @@ function startImposteurRound(roomCode) {
 
   const poke = POKEMON_DB[Math.floor(Math.random() * POKEMON_DB.length)]; 
   let poke2 = null; 
+  let sharedTraitUsed = null; // On mémorise le point commun utilisé !
   
   if (room.impSettings.mode === 'undercover') { 
-    const perfectMatches = POKEMON_DB.filter(c => c.id !== poke.id && (c.color === poke.color || poke.types.some(t => c.types.includes(t))));
+    let matches = [];
     
-    if (perfectMatches.length > 0) {
-      poke2 = perfectMatches[Math.floor(Math.random() * perfectMatches.length)];
+    // On analyse toute la base pour trouver les points communs précis
+    for (const candidate of POKEMON_DB) {
+      if (candidate.id === poke.id) continue;
+      
+      let traits = [];
+      if (candidate.color === poke.color) traits.push('color');
+      if (poke.types.some(t => candidate.types.includes(t))) traits.push('type');
+      if (candidate.height === poke.height) traits.push('height');
+      if (candidate.weight === poke.weight) traits.push('weight');
+      
+      if (traits.length > 0) {
+        matches.push({ pokemon: candidate, sharedTraits: traits });
+      }
+    }
+    
+    if (matches.length > 0) {
+      // On tire un des Pokémon compatibles au sort
+      const match = matches[Math.floor(Math.random() * matches.length)];
+      poke2 = match.pokemon;
+      // On tire au sort L'UN de leurs points communs (s'ils en ont plusieurs)
+      sharedTraitUsed = match.sharedTraits[Math.floor(Math.random() * match.sharedTraits.length)];
     } else { 
       do { 
         poke2 = POKEMON_DB[Math.floor(Math.random() * POKEMON_DB.length)]; 
       } while (poke2.id === poke.id); 
+      // S'il n'y a aucun point commun parfait (rare), on prend un trait au pif
+      sharedTraitUsed = ['type', 'color', 'height', 'weight'][Math.floor(Math.random() * 4)];
     }
   } 
   
@@ -963,8 +985,22 @@ function startImposteurRound(roomCode) {
     }); 
   }); 
   
-  const hints = [`Type: ${poke.types.join(' / ')}`, `Couleur: ${poke.color}`, `Taille: ${poke.height/10}m`, `Poids: ${poke.weight/10}kg`]; 
-  const sysHint = hints[Math.floor(Math.random() * hints.length)] + " (Indice Système)"; 
+  // === CRÉATION DE L'INDICE SYSTÈME INTELLIGENT ===
+  let sysHint = "";
+  
+  if (room.impSettings.mode === 'undercover' && sharedTraitUsed) {
+    // Le système force l'indice sur le point commun !
+    if (sharedTraitUsed === 'type') sysHint = `Type: ${poke.types.join(' / ')}`;
+    else if (sharedTraitUsed === 'color') sysHint = `Couleur: ${poke.color}`;
+    else if (sharedTraitUsed === 'height') sysHint = `Taille: ${poke.height/10}m`;
+    else if (sharedTraitUsed === 'weight') sysHint = `Poids: ${poke.weight/10}kg`;
+  } else {
+    // Mode Classique : l'indice est tiré totalement au hasard
+    const hints = [`Type: ${poke.types.join(' / ')}`, `Couleur: ${poke.color}`, `Taille: ${poke.height/10}m`, `Poids: ${poke.weight/10}kg`]; 
+    sysHint = hints[Math.floor(Math.random() * hints.length)];
+  }
+  
+  sysHint += " (Indice Système)";
   
   room.impState.wordsLog.push({ playerId: 'system', word: sysHint, isAuto: true }); 
   io.to(roomCode).emit('impWordAccepted', { playerId: 'system', word: sysHint, isAuto: true, log: room.impState.wordsLog }); 
