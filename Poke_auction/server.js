@@ -2,12 +2,24 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const axios = require('axios');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
 app.use(express.static('public'));
+
+// ==========================================
+// CHARGEMENT DE LA BASE DE DONNÉES LOCALE
+// ==========================================
+let POKEMON_DB = [];
+try {
+  POKEMON_DB = JSON.parse(fs.readFileSync('./pokedex.json', 'utf-8'));
+  console.log(`✅ Base de données locale chargée : ${POKEMON_DB.length} Pokémon prêts.`);
+} catch(e) {
+  console.log("❌ ATTENTION : pokedex.json introuvable ! Lancez 'node generate_db.js' d'abord.");
+}
 
 const rooms = {};
 
@@ -41,7 +53,8 @@ function normalizeString(str) {
   return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(); 
 }
 
-async function getRandomPokemon() {
+// API UNIQUEMENT POUR POKEAUC (Besoin des statistiques de combat détaillées)
+async function getRandomPokemonApi() {
   const id = Math.floor(Math.random() * 1025) + 1;
   try {
     const pokeRes = await axios.get(`https://pokeapi.co/api/v2/pokemon/${id}`);
@@ -64,7 +77,7 @@ async function getRandomPokemon() {
       id, name: nameFr, color: colorFr, rarity, types,
       height: pokeRes.data.height, weight: pokeRes.data.weight,
       hp: stats[0], hpMax: stats[0], attack: stats[1], def: stats[2], spAtk: stats[3], spDef: stats[4], speed: stats[5],
-      sprite: pokeRes.data.sprites.front_default || pokeRes.data.sprites.other['official-artwork'].front_default,
+      sprite: pokeRes.data.sprites.other['official-artwork'].front_default || pokeRes.data.sprites.front_default,
       spriteBack: pokeRes.data.sprites.back_default || pokeRes.data.sprites.front_default,
       item: null
     };
@@ -78,12 +91,18 @@ function getShopItems() {
     let sum = 0;
     for (let item of SHOP_ITEMS) { 
       sum += item.weight; 
-      if (rand <= sum) { items.push(item); break; } 
+      if (rand <= sum) { 
+        items.push(item); 
+        break; 
+      } 
     }
   }
   return items;
 }
 
+// ==========================================
+// GESTION DES CONNEXIONS ET SALONS
+// ==========================================
 io.on('connection', (socket) => {
   let currentRoom = null;
 
@@ -118,7 +137,11 @@ io.on('connection', (socket) => {
     const botTypes = ['sniper', 'flambeur', 'maniaque'];
     const botType = botTypes[Math.floor(Math.random() * botTypes.length)];
     const botId = 'bot_' + Math.floor(Math.random()*10000);
-    const botAvatars = ["https://play.pokemonshowdown.com/sprites/trainers/silver.png", "https://play.pokemonshowdown.com/sprites/trainers/giovanni.png", "https://play.pokemonshowdown.com/sprites/trainers/cynthia.png"];
+    const botAvatars = [
+      "https://play.pokemonshowdown.com/sprites/trainers/silver.png", 
+      "https://play.pokemonshowdown.com/sprites/trainers/giovanni.png", 
+      "https://play.pokemonshowdown.com/sprites/trainers/cynthia.png"
+    ];
     
     rooms[roomCode].players[botId] = {
         id: botId, name: "Dresseur_Rival", avatar: botAvatars[Math.floor(Math.random()*botAvatars.length)],
@@ -126,7 +149,6 @@ io.on('connection', (socket) => {
     };
 
     socket.emit('roomCreated', { roomCode, role: 'player' });
-    
     rooms[roomCode].state = 'VOTING';
     io.to(roomCode).emit('startVotingPhase', { players: rooms[roomCode].players });
     rooms[roomCode].votes[botId] = ['shiny', 'pokedex', 'masque'][Math.floor(Math.random()*3)];
@@ -136,6 +158,7 @@ io.on('connection', (socket) => {
     const room = rooms[roomCode];
     if (!room) return socket.emit('errorMsg', 'Code de salon invalide.');
 
+    // Gestion de la reconnexion
     const disconnectedPlayer = Object.values(room.players).find(p => p.name === name && !p.connected && !p.isBot);
     if (disconnectedPlayer) {
       clearTimeout(room.disconnectTimeout);
@@ -147,6 +170,7 @@ io.on('connection', (socket) => {
       currentRoom = roomCode;
       socket.join(roomCode);
       
+      // Transfert des responsabilités de l'ancien ID vers le nouveau
       if (room.host === oldId) room.host = socket.id;
       if (room.currentAuction && room.currentAuction.highestBidder === oldId) room.currentAuction.highestBidder = socket.id;
       if (room.battleState) {
@@ -245,9 +269,9 @@ io.on('connection', (socket) => {
   // ==========================================
   socket.on('voteMode', (mode) => { 
     const r = rooms[currentRoom]; 
-    if(r && r.state === 'VOTING') { 
+    if (r && r.state === 'VOTING') { 
       r.votes[socket.id] = mode; 
-      if(Object.keys(r.votes).length === 2) { 
+      if (Object.keys(r.votes).length === 2) { 
         const v = Object.values(r.votes); 
         r.chosenMode = v[0] === v[1] ? v[0] : v[Math.floor(Math.random() * v.length)]; 
         startNextAuction(currentRoom); 
@@ -256,79 +280,116 @@ io.on('connection', (socket) => {
   });
   
   socket.on('placeBid', () => { 
-      const r = rooms[currentRoom]; 
-      if(!r || r.state !== 'AUCTION') return; 
-      const p = r.players[socket.id]; 
-      if(p && p.team.length < 3 && p.budget >= r.currentAuction.highestBid + 50) { 
-          r.currentAuction.highestBid += 50; 
-          r.currentAuction.highestBidder = socket.id; 
-          r.currentAuction.highestBidderName = p.name; 
-          r.currentAuction.timeLeft = 10; 
-          io.to(currentRoom).emit('bidUpdated', { highestBid: r.currentAuction.highestBid, highestBidderName: p.name, timeLeft: 10 }); 
-          triggerBotAuction(currentRoom); 
-      } 
+    const r = rooms[currentRoom]; 
+    if (!r || r.state !== 'AUCTION') return; 
+    
+    const p = r.players[socket.id]; 
+    if (p && p.team.length < 3 && p.budget >= r.currentAuction.highestBid + 50) { 
+      r.currentAuction.highestBid += 50; 
+      r.currentAuction.highestBidder = socket.id; 
+      r.currentAuction.highestBidderName = p.name; 
+      r.currentAuction.timeLeft = 10; 
+      
+      io.to(currentRoom).emit('bidUpdated', { 
+        highestBid: r.currentAuction.highestBid, 
+        highestBidderName: p.name, 
+        timeLeft: 10 
+      }); 
+      
+      triggerBotAuction(currentRoom); 
+    } 
   });
 
   socket.on('buyItem', ({ itemId, pokeIndex }) => { 
     const r = rooms[currentRoom]; 
-    if(!r || r.state !== 'SHOP') return; 
+    if (!r || r.state !== 'SHOP') return; 
+    
     const p = r.players[socket.id]; 
-    const i = SHOP_ITEMS.find(x => x.id === itemId); 
+    const item = SHOP_ITEMS.find(x => x.id === itemId); 
     const pk = p.team[pokeIndex]; 
-    if(i && pk && p.budget >= i.price) { 
-      if(i.type === 'heal' && pk.hp > 0) pk.hp = Math.min(pk.hpMax, pk.hp + i.value); 
-      else if(i.type === 'revive' && pk.hp === 0) pk.hp = Math.floor(pk.hpMax * i.value); 
-      else if(i.type === 'held') pk.item = i; 
-      else return; 
-      p.budget -= i.price; 
+    
+    if (item && pk && p.budget >= item.price) { 
+      if (item.type === 'heal' && pk.hp > 0) {
+        pk.hp = Math.min(pk.hpMax, pk.hp + item.value); 
+      } else if (item.type === 'revive' && pk.hp === 0) {
+        pk.hp = Math.floor(pk.hpMax * item.value); 
+      } else if (item.type === 'held') {
+        pk.item = item; 
+      } else {
+        return; 
+      }
+      p.budget -= item.price; 
       io.to(currentRoom).emit('shopUpdate', { players: r.players }); 
     } 
   });
 
   socket.on('rerollPokemon', async (pokeIndex) => { 
     const r = rooms[currentRoom]; 
-    if(!r || r.state !== 'SHOP') return; 
+    if (!r || r.state !== 'SHOP') return; 
+    
     const p = r.players[socket.id]; 
-    if(p.budget >= 150 && p.team[pokeIndex]) { 
+    if (p.budget >= 150 && p.team[pokeIndex]) { 
       p.budget -= 150; 
-      const nPk = await getRandomPokemon(); 
-      if(nPk) p.team[pokeIndex] = nPk; 
+      const nPk = await getRandomPokemonApi(); 
+      if (nPk) {
+        p.team[pokeIndex] = nPk; 
+      }
       io.to(currentRoom).emit('shopUpdate', { players: r.players }); 
     } 
   });
 
   socket.on('setShopReady', () => { 
     const r = rooms[currentRoom]; 
-    if(!r || r.state !== 'SHOP') return; 
+    if (!r || r.state !== 'SHOP') return; 
+    
     r.players[socket.id].ready = true; 
-    if(Object.values(r.players).filter(x => x.role === 'player').every(x => x.ready)) startBattle(currentRoom); 
+    
+    const players = Object.values(r.players).filter(x => x.role === 'player');
+    if (players.every(x => x.ready)) {
+      startBattle(currentRoom); 
+    }
   });
 
   socket.on('battleAction', (act) => { 
     const r = rooms[currentRoom]; 
-    if(!r || r.state !== 'BATTLE') return; 
+    if (!r || r.state !== 'BATTLE') return; 
+    
     const b = r.battleState; 
-    if(socket.id === b.attackerId) b.attackerAction = act; 
-    if(socket.id === b.defenderId) b.defenderAction = act; 
-    if(b.attackerAction && b.defenderAction) resolveTurn(currentRoom); 
+    if (socket.id === b.attackerId) b.attackerAction = act; 
+    if (socket.id === b.defenderId) b.defenderAction = act; 
+    
+    if (b.attackerAction && b.defenderAction) {
+      resolveTurn(currentRoom); 
+    }
   });
   
   socket.on('requestRematch', () => { 
-      const room = rooms[currentRoom]; 
-      if(!room || room.state !== 'GAME_OVER') return; 
-      room.rematchVotes.add(socket.id); 
-      const bot = Object.values(room.players).find(p => p.isBot);
-      if (bot) room.rematchVotes.add(bot.id);
+    const room = rooms[currentRoom]; 
+    if (!room || room.state !== 'GAME_OVER') return; 
+    
+    room.rematchVotes.add(socket.id); 
+    const bot = Object.values(room.players).find(p => p.isBot);
+    if (bot) {
+      room.rematchVotes.add(bot.id);
+    }
 
-      io.to(currentRoom).emit('rematchUpdate', { count: room.rematchVotes.size }); 
-      if(room.rematchVotes.size >= 2) { 
-          room.rematchVotes.clear(); 
-          Object.values(room.players).filter(x => x.role === 'player').forEach(x => { x.budget = 900; x.team = []; x.ready = false; }); 
-          room.state = 'VOTING'; 
-          room.votes = {}; 
-          if (bot) room.votes[bot.id] = ['shiny', 'pokedex', 'masque'][Math.floor(Math.random()*3)];
-          io.to(currentRoom).emit('startVotingPhase', { players: room.players }); 
-      } 
+    io.to(currentRoom).emit('rematchUpdate', { count: room.rematchVotes.size }); 
+    
+    if (room.rematchVotes.size >= 2) { 
+      room.rematchVotes.clear(); 
+      Object.values(room.players).filter(x => x.role === 'player').forEach(x => { 
+        x.budget = 900; 
+        x.team = []; 
+        x.ready = false; 
+      }); 
+      
+      room.state = 'VOTING'; 
+      room.votes = {}; 
+      if (bot) {
+        room.votes[bot.id] = ['shiny', 'pokedex', 'masque'][Math.floor(Math.random() * 3)];
+      }
+      io.to(currentRoom).emit('startVotingPhase', { players: room.players }); 
+    } 
   });
 
   // ==========================================
@@ -342,20 +403,23 @@ io.on('connection', (socket) => {
     } 
   });
 
-  socket.on('startImposteurGame', async (settings) => { 
+  socket.on('startImposteurGame', (settings) => { 
     const room = rooms[currentRoom]; 
     if (!room || room.host !== socket.id || room.gameType !== 'imposteur') return; 
+    
     if (settings) room.impSettings = settings; 
     Object.values(room.players).forEach(p => p.score = 0); 
     room.impState.round = 1; 
-    await startImposteurRound(currentRoom); 
+    startImposteurRound(currentRoom); 
   });
 
   socket.on('submitImpWord', (word) => {
     const room = rooms[currentRoom];
     if (!room || room.state !== 'PLAYING') return;
+    
     const activePlayerId = room.impState.turnOrder[room.impState.currentTurnIdx];
     if (socket.id !== activePlayerId) return;
+    
     const submittedWord = normalizeString(word);
     let forbiddenName = normalizeString(room.impState.secretPoke.name);
     
@@ -366,12 +430,14 @@ io.on('connection', (socket) => {
     if (submittedWord.includes(forbiddenName) || (forbiddenName.includes(submittedWord) && submittedWord.length > 3)) {
       room.impState.timeLeft = Math.floor(room.impState.timeLeft / 2);
       socket.emit('impWordRejected', { msg: "Mot interdit ou trop proche du nom !", timeLeft: room.impState.timeLeft });
+      
       if (room.impState.timeLeft <= 0) { 
         clearInterval(room.impState.timer); 
         acceptWordAndNextTurn(currentRoom, activePlayerId, "⏳ (Temps écoulé)", true); 
       }
       return;
     }
+    
     clearInterval(room.impState.timer);
     acceptWordAndNextTurn(currentRoom, activePlayerId, word, false);
   });
@@ -379,14 +445,19 @@ io.on('connection', (socket) => {
   socket.on('submitImpVote', (suspectId) => { 
     const room = rooms[currentRoom]; 
     if (!room || room.state !== 'VOTING') return; 
+    
     room.impState.votes[socket.id] = suspectId; 
     const totalPlayers = Object.keys(room.players).filter(id => room.players[id].connected).length; 
-    if (Object.keys(room.impState.votes).length >= totalPlayers) resolveVoting(currentRoom); 
+    
+    if (Object.keys(room.impState.votes).length >= totalPlayers) {
+      resolveVoting(currentRoom); 
+    }
   });
 
   socket.on('submitImpCounterAttack', (guess) => { 
     const room = rooms[currentRoom]; 
     if (!room || room.state !== 'COUNTER_ATTACK' || socket.id !== room.impState.imposteurId) return; 
+    
     clearTimeout(room.impState.timer); 
     const success = (normalizeString(room.impState.secretPoke.name) === normalizeString(guess)); 
     finishImposteurRound(currentRoom, success, guess); 
@@ -395,16 +466,19 @@ io.on('connection', (socket) => {
   // ==========================================
   // EVENTS QUI EST-CE (GUESS)
   // ==========================================
-  socket.on('startGuessGame', async () => {
+  socket.on('startGuessGame', () => {
     const room = rooms[currentRoom];
     if (!room || room.host !== socket.id || room.gameType !== 'guess') return;
+    
     room.state = 'PLAYING';
-    io.to(currentRoom).emit('guessLoading'); 
-
-    let promises = [];
-    for(let i = 0; i < 20; i++) promises.push(getRandomPokemon());
-    let board = await Promise.all(promises);
-    board = board.filter(p => p !== null); 
+    
+    let board = [];
+    while(board.length < 20) {
+        const p = POKEMON_DB[Math.floor(Math.random() * POKEMON_DB.length)];
+        if(!board.find(x => x.id === p.id)) {
+            board.push(p);
+        }
+    }
 
     const players = Object.values(room.players).filter(p => p.role === 'player');
     
@@ -427,123 +501,129 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('guessChatMsg', (msg) => {
-    const room = rooms[currentRoom];
-    if (!room || room.state !== 'PLAYING') return;
-    const player = room.players[socket.id];
-    io.to(currentRoom).emit('guessNewMsg', { sender: player.name, avatar: player.avatar, msg: msg });
+  socket.on('guessChatMsg', (msg) => { 
+    const room = rooms[currentRoom]; 
+    if (!room || room.state !== 'PLAYING') return; 
+    
+    const player = room.players[socket.id]; 
+    io.to(currentRoom).emit('guessNewMsg', { sender: player.name, avatar: player.avatar, msg: msg }); 
   });
 
-  socket.on('guessEndTurn', () => {
-    const room = rooms[currentRoom];
-    if (!room || room.state !== 'PLAYING' || room.guessState.turn !== socket.id) return;
+  socket.on('guessEndTurn', () => { 
+    const room = rooms[currentRoom]; 
+    if (!room || room.state !== 'PLAYING' || room.guessState.turn !== socket.id) return; 
     
-    const players = Object.keys(room.players).filter(id => room.players[id].role === 'player');
-    const nextPlayerId = players.find(id => id !== socket.id);
-    room.guessState.turn = nextPlayerId;
+    const players = Object.keys(room.players).filter(id => room.players[id].role === 'player'); 
+    const nextPlayerId = players.find(id => id !== socket.id); 
     
-    io.to(currentRoom).emit('guessTurnUpdated', { turn: room.guessState.turn });
+    room.guessState.turn = nextPlayerId; 
+    io.to(currentRoom).emit('guessTurnUpdated', { turn: room.guessState.turn }); 
   });
 
   socket.on('guessFinalAnswer', (pokeId) => {
     const room = rooms[currentRoom];
     if (!room || room.state !== 'PLAYING') return;
-
+    
     const players = Object.keys(room.players).filter(id => room.players[id].role === 'player');
     const opponentId = players.find(id => id !== socket.id);
     const opponentSecret = room.guessState.secrets[opponentId];
 
     room.state = 'GAME_OVER';
-
-    if (opponentSecret.id === pokeId) {
-      io.to(currentRoom).emit('guessGameOver', { winnerId: socket.id, secret: opponentSecret });
-    } else {
-      io.to(currentRoom).emit('guessGameOver', { winnerId: opponentId, secret: opponentSecret, failGuess: true });
+    
+    if (opponentSecret.id === pokeId) { 
+      io.to(currentRoom).emit('guessGameOver', { winnerId: socket.id, secret: opponentSecret }); 
+    } else { 
+      io.to(currentRoom).emit('guessGameOver', { winnerId: opponentId, secret: opponentSecret, failGuess: true }); 
     }
   });
 
-  socket.on('guessRematch', () => {
-    const room = rooms[currentRoom];
-    if(!room || room.state !== 'GAME_OVER') return;
-    room.rematchVotes.add(socket.id);
-    io.to(currentRoom).emit('guessRematchUpdate', { count: room.rematchVotes.size });
-    if(room.rematchVotes.size >= 2) {
-      room.rematchVotes.clear();
-      room.state = 'LOBBY';
-      io.to(currentRoom).emit('lobbyUpdate', { players: room.players, host: room.host });
-    }
+  socket.on('guessRematch', () => { 
+    const room = rooms[currentRoom]; 
+    if (!room || room.state !== 'GAME_OVER') return; 
+    
+    room.rematchVotes.add(socket.id); 
+    io.to(currentRoom).emit('guessRematchUpdate', { count: room.rematchVotes.size }); 
+    
+    if (room.rematchVotes.size >= 2) { 
+      room.rematchVotes.clear(); 
+      room.state = 'LOBBY'; 
+      io.to(currentRoom).emit('lobbyUpdate', { players: room.players, host: room.host }); 
+    } 
   });
-
 });
 
 // ==========================================
-// LOGIQUE BOT POKEAUC (IA COMPLETE)
+// LOGIQUE BOT POKEAUC (IA)
 // ==========================================
-
 function triggerBotAuction(roomCode) {
-    const room = rooms[roomCode];
-    if (!room || room.state !== 'AUCTION') return;
-    const bot = Object.values(room.players).find(p => p.isBot);
-    if (!bot || bot.team.length >= 3) return;
+  const room = rooms[roomCode];
+  if (!room || room.state !== 'AUCTION') return;
+  
+  const bot = Object.values(room.players).find(p => p.isBot);
+  if (!bot || bot.team.length >= 3) return;
 
-    clearTimeout(room.botTimeout);
+  clearTimeout(room.botTimeout);
+  
+  let maxWilling = 150;
+  const rarity = room.currentAuction.pokemon.rarity;
+  
+  if (bot.botType === 'sniper') { 
+    maxWilling = rarity === 'Légendaire' ? 600 : rarity === 'Épique' ? 400 : rarity === 'Rare' ? 250 : 150; 
+  } else if (bot.botType === 'flambeur') { 
+    maxWilling = Math.floor(Math.random() * 200) + 300; 
+  } else if (bot.botType === 'maniaque') { 
+    if (!bot.currentObsession) { 
+      bot.currentObsession = Math.random() < 0.5 ? bot.budget : Math.floor(Math.random() * 100) + 50; 
+    } 
+    maxWilling = bot.currentObsession; 
+  }
+
+  if (room.currentAuction.highestBid < maxWilling && bot.budget >= room.currentAuction.highestBid + 50 && room.currentAuction.highestBidder !== bot.id) {
+    let delay = Math.random() * 1000 + 500; 
     
-    let maxWilling = 150;
-    const rarity = room.currentAuction.pokemon.rarity;
-    
-    // IA CORRIGÉE ET BEAUCOUP PLUS AGRESSIVE
-    if (bot.botType === 'sniper') {
-        maxWilling = rarity === 'Légendaire' ? 600 : rarity === 'Épique' ? 400 : rarity === 'Rare' ? 250 : 150;
-    } else if (bot.botType === 'flambeur') {
-        maxWilling = Math.floor(Math.random() * 200) + 300; // Va pousser jusqu'à 300-500 pour troller
-    } else if (bot.botType === 'maniaque') {
-        // 50% de chance de vouloir le pokémon à tout prix (jusqu'à son budget max)
-        if (!bot.currentObsession) {
-            bot.currentObsession = Math.random() < 0.5 ? bot.budget : Math.floor(Math.random() * 100) + 50; 
-        }
-        maxWilling = bot.currentObsession; 
+    if (bot.botType === 'sniper') { 
+      const timeRemainingMs = room.currentAuction.timeLeft * 1000; 
+      if (timeRemainingMs > 3000) { 
+        delay = timeRemainingMs - (Math.random() * 1000 + 1500); 
+      } 
+    } else if (bot.botType === 'flambeur') { 
+      delay = Math.random() * 600 + 200; 
     }
 
-    if (room.currentAuction.highestBid < maxWilling && bot.budget >= room.currentAuction.highestBid + 50 && room.currentAuction.highestBidder !== bot.id) {
-        
-        let delay = Math.random() * 1000 + 500; 
-        
-        if (bot.botType === 'sniper') {
-            const timeRemainingMs = room.currentAuction.timeLeft * 1000;
-            if (timeRemainingMs > 3000) {
-                delay = timeRemainingMs - (Math.random() * 1000 + 1500); // Mise à la toute dernière seconde !
-            }
-        } else if (bot.botType === 'flambeur') {
-            delay = Math.random() * 600 + 200; // Mise super vite (0.2s)
+    room.botTimeout = setTimeout(() => {
+      if (rooms[roomCode] && rooms[roomCode].state === 'AUCTION') {
+        if (room.currentAuction.highestBidder !== bot.id && room.currentAuction.highestBid < maxWilling && bot.budget >= room.currentAuction.highestBid + 50) {
+          room.currentAuction.highestBid += 50; 
+          room.currentAuction.highestBidder = bot.id; 
+          room.currentAuction.highestBidderName = bot.name; 
+          room.currentAuction.timeLeft = 10;
+          
+          io.to(roomCode).emit('bidUpdated', { 
+            highestBid: room.currentAuction.highestBid, 
+            highestBidderName: bot.name, 
+            timeLeft: 10 
+          });
+          triggerBotAuction(roomCode); 
         }
-
-        room.botTimeout = setTimeout(() => {
-            if (rooms[roomCode] && rooms[roomCode].state === 'AUCTION') {
-                 if (room.currentAuction.highestBidder !== bot.id && room.currentAuction.highestBid < maxWilling && bot.budget >= room.currentAuction.highestBid + 50) {
-                     room.currentAuction.highestBid += 50;
-                     room.currentAuction.highestBidder = bot.id;
-                     room.currentAuction.highestBidderName = bot.name;
-                     room.currentAuction.timeLeft = 10;
-                     io.to(roomCode).emit('bidUpdated', { highestBid: room.currentAuction.highestBid, highestBidderName: bot.name, timeLeft: 10 });
-                     
-                     triggerBotAuction(roomCode); 
-                 }
-            }
-        }, delay);
-    }
+      }
+    }, delay);
+  }
 }
 
 function triggerBotShop(roomCode) { 
   const room = rooms[roomCode]; 
   if (!room || room.state !== 'SHOP') return; 
+  
   const bot = Object.values(room.players).find(p => p.isBot); 
   if (!bot) return; 
-
+  
   room.botTimeout = setTimeout(() => { 
     if (rooms[roomCode] && rooms[roomCode].state === 'SHOP') { 
       bot.ready = true; 
       const players = Object.values(room.players).filter(p => p.role === 'player'); 
-      if (players.every(p => p.ready)) startBattle(roomCode); 
+      if (players.every(p => p.ready)) {
+        startBattle(roomCode); 
+      }
     } 
   }, 2500); 
 }
@@ -551,6 +631,7 @@ function triggerBotShop(roomCode) {
 function triggerBotBattle(roomCode) { 
   const room = rooms[roomCode]; 
   if (!room || room.state !== 'BATTLE') return; 
+  
   const bot = Object.values(room.players).find(p => p.isBot); 
   if (!bot) return; 
   
@@ -561,12 +642,16 @@ function triggerBotBattle(roomCode) {
     if (rooms[roomCode] && rooms[roomCode].state === 'BATTLE') { 
       const botActiveIdx = b.attackerId === bot.id ? b.p1ActiveIndex : (b.p1.id === bot.id ? b.p1ActiveIndex : b.p2ActiveIndex); 
       const activePoke = bot.team[botActiveIdx]; 
+      
       if (b.attackerId === bot.id) { 
         b.attackerAction = activePoke.attack >= activePoke.spAtk ? 'physique' : 'special'; 
       } else { 
         b.defenderAction = Math.random() > 0.5 ? 'physiqueDef' : 'specialDef'; 
       } 
-      if (b.attackerAction && b.defenderAction) resolveTurn(roomCode); 
+      
+      if (b.attackerAction && b.defenderAction) {
+        resolveTurn(roomCode); 
+      }
     } 
   }, 2000); 
 }
@@ -574,22 +659,27 @@ function triggerBotBattle(roomCode) {
 // ==========================================
 // POKEAUC CORE
 // ==========================================
-
 async function startNextAuction(roomCode) { 
   const r = rooms[roomCode]; 
   if(!r || (r.state !== 'VOTING' && r.state !== 'AUCTION')) return; 
+  
   r.state = 'AUCTION'; 
-  const p = await getRandomPokemon(); 
-  if(!p) return setTimeout(() => startNextAuction(roomCode), 1000); 
+  const p = await getRandomPokemonApi(); 
+  
+  if(!p) {
+    return setTimeout(() => startNextAuction(roomCode), 1000); 
+  }
   
   let h = r.chosenMode === 'shiny' ? `Couleur : ${p.color}` : r.chosenMode === 'pokedex' ? `Pokédex N° : #${p.id}` : 'Masqué'; 
   r.currentAuction = { pokemon: p, highestBid: 0, highestBidder: null, highestBidderName: 'Personne', timeLeft: 12 }; 
+  
   io.to(roomCode).emit('newAuction', { hint: h, rarity: p.rarity, players: r.players }); 
   
   const bot = Object.values(r.players).find(pl => pl.isBot); 
   if(bot) bot.currentObsession = null; 
   
   if(r.auctionTimer) clearInterval(r.auctionTimer); 
+  
   r.auctionTimer = setInterval(() => { 
     r.currentAuction.timeLeft--; 
     io.to(roomCode).emit('timerTick', r.currentAuction.timeLeft); 
@@ -598,26 +688,36 @@ async function startNextAuction(roomCode) {
       endAuction(roomCode); 
     } 
   }, 1000); 
+  
   triggerBotAuction(roomCode); 
 }
 
 function endAuction(roomCode) { 
   const r = rooms[roomCode]; 
   if(!r) return; 
+  
   const w = r.currentAuction.highestBidder; 
   if(w && r.players[w]) { 
     r.players[w].budget -= r.currentAuction.highestBid; 
     r.players[w].team.push(r.currentAuction.pokemon); 
   } 
-  io.to(roomCode).emit('auctionEnded', { players: r.players, winnerName: w ? r.players[w].name : null, pokemon: r.currentAuction.pokemon.name }); 
+  
+  io.to(roomCode).emit('auctionEnded', { 
+    players: r.players, 
+    winnerName: w ? r.players[w].name : null, 
+    pokemon: r.currentAuction.pokemon.name 
+  }); 
+  
   checkAndFillTeams(roomCode); 
 }
 
 async function checkAndFillTeams(roomCode) { 
   const r = rooms[roomCode]; 
   if(!r || r.state !== 'AUCTION') return; 
+  
   const p = Object.values(r.players).filter(x => x.role === 'player'); 
   if(p.length < 2) return; 
+  
   const p1 = p[0], p2 = p[1]; 
   
   if(p1.team.length >= 3 && p2.team.length >= 3) { 
@@ -634,9 +734,15 @@ async function checkAndFillTeams(roomCode) {
   } 
   
   if(n) { 
-    const pk = await getRandomPokemon(); 
+    const pk = await getRandomPokemonApi(); 
     if(pk) n.team.push(pk); 
-    io.to(roomCode).emit('auctionEnded', { players: r.players, winnerName: "Système", pokemon: `${pk?.name} (Auto-Fill)` }); 
+    
+    io.to(roomCode).emit('auctionEnded', { 
+      players: r.players, 
+      winnerName: "Système", 
+      pokemon: `${pk?.name} (Auto-Fill)` 
+    }); 
+    
     setTimeout(() => checkAndFillTeams(roomCode), 1500); 
   } else { 
     setTimeout(() => startNextAuction(roomCode), 2000); 
@@ -646,22 +752,41 @@ async function checkAndFillTeams(roomCode) {
 function enterShopPhase(roomCode) { 
   const r = rooms[roomCode]; 
   if(!r || r.state === 'SHOP') return; 
+  
   r.state = 'SHOP'; 
   r.shopItems = getShopItems(); 
+  
   Object.values(r.players).forEach(x => x.ready = false); 
   io.to(roomCode).emit('enterShop', { shopItems: r.shopItems, players: r.players }); 
+  
   triggerBotShop(roomCode); 
 }
 
-function getFirstAliveIndex(team) { return team.findIndex(p => p.hp > 0); }
+function getFirstAliveIndex(team) { 
+  return team.findIndex(p => p.hp > 0); 
+}
 
 function startBattle(roomCode) { 
   const r = rooms[roomCode]; 
   if(!r || r.state === 'BATTLE') return; 
+  
   r.state = 'BATTLE'; 
   const p = Object.values(r.players).filter(x => x.role === 'player'); 
   const p1 = p[0], p2 = p[1]; 
-  r.battleState = { arena: ARENA_TYPES[Math.floor(Math.random() * ARENA_TYPES.length)], lastDamage: null, p1: { id: p1.id, name: p1.name }, p2: { id: p2.id, name: p2.name }, p1ActiveIndex: 0, p2ActiveIndex: 0, attackerId: p1.id, defenderId: p2.id, attackerAction: null, defenderAction: null }; 
+  
+  r.battleState = { 
+    arena: ARENA_TYPES[Math.floor(Math.random() * ARENA_TYPES.length)], 
+    lastDamage: null, 
+    p1: { id: p1.id, name: p1.name }, 
+    p2: { id: p2.id, name: p2.name }, 
+    p1ActiveIndex: 0, 
+    p2ActiveIndex: 0, 
+    attackerId: p1.id, 
+    defenderId: p2.id, 
+    attackerAction: null, 
+    defenderAction: null 
+  }; 
+  
   sendBattleUpdate(roomCode, `L'arène est sélectionnée. Le combat commence ! ${p1.name} attaque en premier.`); 
   triggerBotBattle(roomCode); 
 }
@@ -670,14 +795,16 @@ function resolveTurn(roomCode) {
   const r = rooms[roomCode]; 
   const b = r.battleState; 
   b.lastDamage = null; 
+  
   const aP = r.players[b.attackerId]; 
   const dP = r.players[b.defenderId]; 
   const aIdx = b.attackerId === b.p1.id ? b.p1ActiveIndex : b.p2ActiveIndex; 
   const dIdx = b.defenderId === b.p1.id ? b.p1ActiveIndex : b.p2ActiveIndex; 
+  
   const aPk = aP.team[aIdx]; 
   const dPk = dP.team[dIdx]; 
   
-  if(dPk.item && dPk.item.id === 'poudre' && Math.random() < 0.15) { 
+  if (dPk.item && dPk.item.id === 'poudre' && Math.random() < 0.15) { 
     b.attackerAction = null; 
     b.defenderAction = null; 
     sendBattleUpdate(roomCode, `${dPk.name} esquive l'attaque grâce à Poudre Claire !`); 
@@ -687,43 +814,83 @@ function resolveTurn(roomCode) {
   
   let rA = b.attackerAction === 'special' ? aPk.spAtk : aPk.attack; 
   let rD = b.defenderAction === 'specialDef' ? dPk.spDef : dPk.def; 
-  if(aPk.item && aPk.item.id === 'bandeau' && b.attackerAction === 'physique') rA *= 1.2; 
-  if(aPk.item && aPk.item.id === 'lunettes' && b.attackerAction === 'special') rA *= 1.2; 
-  if(aPk.item && aPk.item.id === 'orbe') rA *= 1.3; 
-  if(dPk.item && dPk.item.id === 'veste') { if(b.defenderAction === 'specialDef') rD *= 1.3; if(b.defenderAction === 'physiqueDef') rD *= 0.9; } 
+  
+  if (aPk.item && aPk.item.id === 'bandeau' && b.attackerAction === 'physique') rA *= 1.2; 
+  if (aPk.item && aPk.item.id === 'lunettes' && b.attackerAction === 'special') rA *= 1.2; 
+  if (aPk.item && aPk.item.id === 'orbe') rA *= 1.3; 
+  if (dPk.item && dPk.item.id === 'veste') { 
+    if (b.defenderAction === 'specialDef') rD *= 1.3; 
+    if (b.defenderAction === 'physiqueDef') rD *= 0.9; 
+  } 
   
   let dmg = Math.max(5, Math.floor(rA - (rD / 3))); 
   b.lastDamage = { targetId: b.defenderId, amount: dmg }; 
   let log = `${aPk.name} inflige ${dmg} dégâts !`; 
   dPk.hp -= dmg; 
   
-  if(dPk.hp <= 0 && dPk.item && dPk.item.id === 'ceinture') { dPk.hp = 1; dPk.item = null; log += ` Survit grâce à Ceinture Force !`; } 
-  if(dPk.hp < 0) dPk.hp = 0; 
-  if(aPk.item && aPk.item.id === 'orbe') { const rc = Math.floor(aPk.hpMax * 0.1); aPk.hp = Math.max(0, aPk.hp - rc); log += ` Orbe Vie draine ${rc} PV.`; } 
-  if(aPk.item && aPk.item.id === 'grelot') { const hl = Math.floor(dmg * 0.2); aPk.hp = Math.min(aPk.hpMax, aPk.hp + hl); log += ` Grelot soigne ${hl} PV.`; } 
-  if(dPk.item && dPk.item.id === 'casque' && b.attackerAction === 'physique' && dPk.hp > 0) { aPk.hp = Math.max(0, aPk.hp - 15); log += ` Casque Brut inflige 15 PV !`; } 
-  if(dPk.item && dPk.item.id === 'sitrus' && dPk.hp > 0 && dPk.hp <= dPk.hpMax / 2) { dPk.hp = Math.min(dPk.hpMax, dPk.hp + 30); dPk.item = null; log += ` Baie Sitrus restaure 30 PV !`; } 
+  if (dPk.hp <= 0 && dPk.item && dPk.item.id === 'ceinture') { 
+    dPk.hp = 1; dPk.item = null; log += ` Survit grâce à Ceinture Force !`; 
+  } 
+  
+  if (dPk.hp < 0) dPk.hp = 0; 
+  
+  if (aPk.item && aPk.item.id === 'orbe') { 
+    const rc = Math.floor(aPk.hpMax * 0.1); 
+    aPk.hp = Math.max(0, aPk.hp - rc); 
+    log += ` Orbe Vie draine ${rc} PV.`; 
+  } 
+  
+  if (aPk.item && aPk.item.id === 'grelot') { 
+    const hl = Math.floor(dmg * 0.2); 
+    aPk.hp = Math.min(aPk.hpMax, aPk.hp + hl); 
+    log += ` Grelot soigne ${hl} PV.`; 
+  } 
+  
+  if (dPk.item && dPk.item.id === 'casque' && b.attackerAction === 'physique' && dPk.hp > 0) { 
+    aPk.hp = Math.max(0, aPk.hp - 15); 
+    log += ` Casque Brut inflige 15 PV !`; 
+  } 
+  
+  if (dPk.item && dPk.item.id === 'sitrus' && dPk.hp > 0 && dPk.hp <= dPk.hpMax / 2) { 
+    dPk.hp = Math.min(dPk.hpMax, dPk.hp + 30); 
+    dPk.item = null; 
+    log += ` Baie Sitrus restaure 30 PV !`; 
+  } 
   
   let fS = null; 
-  if(dPk.hp > 0 && dPk.item && dPk.item.id === 'fuite') { dPk.item = null; fS = b.defenderId; log += ` Bouton Fuite activé !`; } 
-  else if(dPk.hp > 0 && aPk.item && aPk.item.id === 'cartouche') { aPk.item = null; fS = b.defenderId; log += ` Cartouche Rouge activée !`; } 
+  if (dPk.hp > 0 && dPk.item && dPk.item.id === 'fuite') { 
+    dPk.item = null; fS = b.defenderId; log += ` Bouton Fuite activé !`; 
+  } else if(dPk.hp > 0 && aPk.item && aPk.item.id === 'cartouche') { 
+    aPk.item = null; fS = b.defenderId; log += ` Cartouche Rouge activée !`; 
+  } 
   
   const nA = getFirstAliveIndex(aP.team); 
   const nD = fS === b.defenderId ? getFirstAliveIndex(dP.team.filter((x,i)=> i!==dIdx && x.hp>0)) : getFirstAliveIndex(dP.team); 
   let tNd = fS === b.defenderId && dP.team.findIndex((x,i)=> i!==dIdx && x.hp>0) !== -1 ? dP.team.findIndex((x,i)=> i!==dIdx && x.hp>0) : getFirstAliveIndex(dP.team); 
   
-  if(nA === -1 || tNd === -1) { 
+  if (nA === -1 || tNd === -1) { 
     r.state = 'GAME_OVER'; 
     log += nA === -1 ? ` ${dP.name} gagne !` : ` ${aP.name} gagne !`; 
   } else { 
-    if(aPk.hp > 0 && aPk.item && aPk.item.id === 'restes') aPk.hp = Math.min(aPk.hpMax, aPk.hp + 10); 
-    if(dPk.hp > 0 && dPk.item && dPk.item.id === 'restes') dPk.hp = Math.min(dPk.hpMax, dPk.hp + 10); 
-    if(b.attackerId === b.p1.id) { b.p1ActiveIndex = nA; b.p2ActiveIndex = tNd; } 
-    else { b.p2ActiveIndex = nA; b.p1ActiveIndex = tNd; } 
-    const t = b.attackerId; b.attackerId = b.defenderId; b.defenderId = t; 
+    if (aPk.hp > 0 && aPk.item && aPk.item.id === 'restes') aPk.hp = Math.min(aPk.hpMax, aPk.hp + 10); 
+    if (dPk.hp > 0 && dPk.item && dPk.item.id === 'restes') dPk.hp = Math.min(dPk.hpMax, dPk.hp + 10); 
+    
+    if (b.attackerId === b.p1.id) { 
+      b.p1ActiveIndex = nA; 
+      b.p2ActiveIndex = tNd; 
+    } else { 
+      b.p2ActiveIndex = nA; 
+      b.p1ActiveIndex = tNd; 
+    } 
+    
+    const t = b.attackerId; 
+    b.attackerId = b.defenderId; 
+    b.defenderId = t; 
   } 
+  
   b.attackerAction = null; 
   b.defenderAction = null; 
+  
   sendBattleUpdate(roomCode, log); 
   triggerBotBattle(roomCode); 
 }
@@ -741,25 +908,27 @@ function sendBattleUpdateToSocket(sId, roomCode, logMsg) {
 // ==========================================
 // IMPOSTEUR CORE
 // ==========================================
-
-async function startImposteurRound(roomCode) { 
+function startImposteurRound(roomCode) { 
   const room = rooms[roomCode]; 
   room.state = 'PLAYING'; 
-  let poke = await getRandomPokemon(); 
-  let failSafe = 0; 
-  while(!poke && failSafe < 5) { poke = await getRandomPokemon(); failSafe++; } 
   
+  if (POKEMON_DB.length === 0) {
+    return io.to(roomCode).emit('errorMsg', "Base de données absente. Le serveur est mal configuré.");
+  }
+
+  const poke = POKEMON_DB[Math.floor(Math.random() * POKEMON_DB.length)]; 
   let poke2 = null; 
-  if (room.impSettings.mode === 'undercover') { 
-    poke2 = await getRandomPokemon(); 
-    failSafe = 0; 
-    while((!poke2 || poke2.id === poke.id) && failSafe < 5) { poke2 = await getRandomPokemon(); failSafe++; } 
-  } 
   
-  if (!poke || (room.impSettings.mode === 'undercover' && !poke2)) { 
-    io.to(roomCode).emit('errorMsg', "Erreur API Pokémon. Relancez."); 
-    room.state = 'LOBBY'; 
-    return; 
+  if (room.impSettings.mode === 'undercover') { 
+    const perfectMatches = POKEMON_DB.filter(c => c.id !== poke.id && (c.color === poke.color || poke.types.some(t => c.types.includes(t))));
+    
+    if (perfectMatches.length > 0) {
+      poke2 = perfectMatches[Math.floor(Math.random() * perfectMatches.length)];
+    } else { 
+      do { 
+        poke2 = POKEMON_DB[Math.floor(Math.random() * POKEMON_DB.length)]; 
+      } while (poke2.id === poke.id); 
+    }
   } 
   
   room.impState.secretPoke = poke; 
@@ -777,36 +946,52 @@ async function startImposteurRound(roomCode) {
     const isImp = (id === room.impState.imposteurId); 
     let sentPoke = poke; 
     let flagImp = isImp; 
+    
     if (room.impSettings.mode === 'undercover') { 
       flagImp = false; 
       sentPoke = isImp ? poke2 : poke; 
     } else { 
       sentPoke = isImp ? null : poke; 
     } 
-    io.to(id).emit('impRoundStarted', { isImposteur: flagImp, pokemon: sentPoke ? { name: sentPoke.name, sprite: sentPoke.sprite } : null, turnOrder: room.impState.turnOrder, players: room.players, mode: room.impSettings.mode }); 
+    
+    io.to(id).emit('impRoundStarted', { 
+      isImposteur: flagImp, 
+      pokemon: sentPoke ? { name: sentPoke.name, sprite: sentPoke.sprite } : null, 
+      turnOrder: room.impState.turnOrder, 
+      players: room.players, 
+      mode: room.impSettings.mode 
+    }); 
   }); 
   
-  const hints = [`Type: ${poke.types}`, `Couleur: ${poke.color}`, `Taille: ${poke.height/10}m`, `Poids: ${poke.weight/10}kg`]; 
+  const hints = [`Type: ${poke.types.join(' / ')}`, `Couleur: ${poke.color}`, `Taille: ${poke.height/10}m`, `Poids: ${poke.weight/10}kg`]; 
   const sysHint = hints[Math.floor(Math.random() * hints.length)] + " (Indice Système)"; 
+  
   room.impState.wordsLog.push({ playerId: 'system', word: sysHint, isAuto: true }); 
   io.to(roomCode).emit('impWordAccepted', { playerId: 'system', word: sysHint, isAuto: true, log: room.impState.wordsLog }); 
+  
   setTimeout(() => startImposteurTurn(roomCode), 2000); 
 }
 
 function startImposteurTurn(roomCode) { 
   const room = rooms[roomCode]; 
   if (!room) return; 
+  
   const activePlayerId = room.impState.turnOrder[room.impState.currentTurnIdx]; 
   room.impState.timeLeft = 60; 
+  
   io.to(roomCode).emit('impNewTurn', { activePlayerId, timeLeft: 60, lap: room.impState.currentWordLap }); 
   
   if (room.impState.timer) clearInterval(room.impState.timer); 
+  
   room.impState.timer = setInterval(() => { 
     room.impState.timeLeft--; 
     io.to(roomCode).emit('impTimerUpdate', room.impState.timeLeft); 
+    
     if (room.impState.timeLeft <= 0) { 
       clearInterval(room.impState.timer); 
-      if (rooms[roomCode] && rooms[roomCode].impState) acceptWordAndNextTurn(roomCode, activePlayerId, "⏳ (Temps écoulé)", true); 
+      if (rooms[roomCode] && rooms[roomCode].impState) {
+        acceptWordAndNextTurn(roomCode, activePlayerId, "⏳ (Temps écoulé)", true); 
+      }
     } 
   }, 1000); 
 }
@@ -817,17 +1002,20 @@ function acceptWordAndNextTurn(roomCode, playerId, word, isAuto) {
   
   room.impState.wordsLog.push({ playerId, word, isAuto }); 
   io.to(roomCode).emit('impWordAccepted', { playerId, word, isAuto, log: room.impState.wordsLog }); 
+  
   room.impState.currentTurnIdx++; 
   
   if (room.impState.currentTurnIdx >= room.impState.turnOrder.length) { 
     room.impState.currentTurnIdx = 0; 
     room.impState.currentWordLap++; 
+    
     if (room.impState.currentWordLap > room.impSettings.wordsPerPlayer) { 
       io.to(roomCode).emit('impWaitBeforeVote', { delay: 10 }); 
       setTimeout(() => startImposteurVoting(roomCode), 10000); 
       return; 
     } 
   } 
+  
   setTimeout(() => startImposteurTurn(roomCode), 2000); 
 }
 
@@ -840,14 +1028,28 @@ function startImposteurVoting(roomCode) {
 function resolveVoting(roomCode) { 
   const room = rooms[roomCode]; 
   room.state = 'RESOLUTION'; 
+  
   const counts = {}; 
   Object.values(room.impState.votes).forEach(id => counts[id] = (counts[id] || 0) + 1); 
-  let accusedId = null; let maxVotes = 0; 
-  for (const [id, count] of Object.entries(counts)) { if (count > maxVotes) { maxVotes = count; accusedId = id; } } 
+  
+  let accusedId = null; 
+  let maxVotes = 0; 
+  for (const [id, count] of Object.entries(counts)) { 
+    if (count > maxVotes) { 
+      maxVotes = count; 
+      accusedId = id; 
+    } 
+  } 
   
   const impId = room.impState.imposteurId; 
   const imposteurCaught = (accusedId === impId); 
-  io.to(roomCode).emit('impVoteResult', { votes: room.impState.votes, accusedId, imposteurCaught, realImposteurId: impId }); 
+  
+  io.to(roomCode).emit('impVoteResult', { 
+    votes: room.impState.votes, 
+    accusedId, 
+    imposteurCaught, 
+    realImposteurId: impId 
+  }); 
   
   if (imposteurCaught) { 
     room.state = 'COUNTER_ATTACK'; 
@@ -865,13 +1067,26 @@ function finishImposteurRound(roomCode, counterAttackSuccess, guess = null) {
   const impId = room.impState.imposteurId; 
   
   if (room.state === 'RESOLUTION' || (room.state === 'ROUND_END' && !counterAttackSuccess)) { 
-    if (counterAttackSuccess) { winners = [impId]; } 
-    else if (guess !== null) { winners = Object.keys(room.players).filter(id => id !== impId); } 
-    else { winners = [impId]; } 
+    if (counterAttackSuccess) { 
+      winners = [impId]; 
+    } else if (guess !== null) { 
+      winners = Object.keys(room.players).filter(id => id !== impId); 
+    } else { 
+      winners = [impId]; 
+    } 
   } 
-  winners.forEach(id => { if (room.players[id]) room.players[id].score++; }); 
   
-  io.to(roomCode).emit('impRoundEnd', { secretPoke: room.impState.secretPoke, winners, scores: room.players, guess }); 
+  winners.forEach(id => { 
+    if (room.players[id]) room.players[id].score++; 
+  }); 
+  
+  io.to(roomCode).emit('impRoundEnd', { 
+    secretPoke: room.impState.secretPoke, 
+    winners, 
+    scores: room.players, 
+    guess 
+  }); 
+  
   setTimeout(() => { 
     if (room.impState.round < room.impSettings.maxRounds) { 
       room.impState.round++; 
@@ -883,4 +1098,5 @@ function finishImposteurRound(roomCode, counterAttackSuccess, guess = null) {
   }, 10000); 
 }
 
+// Lancement du serveur
 server.listen(process.env.PORT || 3000, () => console.log('Poké Game Center V10 Actif !'));
