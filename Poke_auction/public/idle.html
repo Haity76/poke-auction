@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Poké AFK JRPG</title>
+    <!-- Chargement de Socket.io côté client -->
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        /* === RESET & CONFIGURATION MOBILE === */
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212; 
+            color: #ffffff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Empêche le scroll sur toute la page */
+        }
+
+        /* === SPLIT-SCREEN : ZONE DE COMBAT (TIERS SUPÉRIEUR) === */
+        #battle-screen {
+            flex: 0 0 35%; /* Prend 35% de l'écran */
+            background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%);
+            position: relative;
+            border-bottom: 3px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .stage-info {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        /* === SPLIT-SCREEN : ZONE DE GESTION (DEUX TIERS INFÉRIEURS) === */
+        #management-screen {
+            flex: 1; /* Prend le reste de l'espace */
+            position: relative;
+            background-color: #1e1e1e;
+        }
+
+        /* Les différents panneaux (onglets) */
+        .panel {
+            display: none; /* Masqué par défaut */
+            height: 100%;
+            padding: 20px;
+            overflow-y: auto; /* Permet le scroll dans l'onglet */
+            padding-bottom: 80px; /* Espace pour la barre de navigation */
+        }
+        .panel.active { display: block; } /* Affiché si actif */
+
+        /* Design des cartes Pokémon dans l'équipe */
+        .roster-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .poke-card {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            border: 2px solid #444;
+        }
+        .poke-card.legendaire { border-color: #ffd700; box-shadow: 0 0 10px #ffd70055; }
+
+        /* === BOTTOM NAVIGATION (BARRE DU BAS) === */
+        #bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 65px;
+            background-color: #111;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #333;
+            z-index: 100;
+        }
+        .nav-btn {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            padding: 10px 0;
+        }
+        .nav-btn.active { color: #4facfe; font-weight: bold; }
+        .nav-btn .icon { font-size: 20px; margin-bottom: 4px; }
+
+        /* === GACHA BUTTON === */
+        .btn-pull {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(90deg, #ff8a00, #e52e71);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. ZONE DE COMBAT -->
+    <div id="battle-screen">
+        <div class="stage-info">Stage <span id="ui-stage">1-1</span></div>
+        <div id="battle-logs" style="position: absolute; bottom: 10px; font-size: 12px; color: #eee;">
+            En attente du déploiement...
+        </div>
+        <!-- Les sprites des Pokémon apparaîtront ici -->
+    </div>
+
+    <!-- 2. ZONE DE GESTION (PANNEAUX) -->
+    <div id="management-screen">
+        
+        <!-- Panneau AFK / Accueil -->
+        <div id="panel-home" class="panel active">
+            <h2>Générateur AFK</h2>
+            <p style="color: #aaa; margin-top: 10px;">L'équipe se bat automatiquement.</p>
+            <div style="margin-top: 20px; background: #2a2a2a; padding: 15px; border-radius: 10px;">
+                <p>💰 Or : <span id="ui-gold">0</span></p>
+                <p>🍇 Baies XP : <span id="ui-xp">0</span></p>
+                <p>💎 Cristaux : <span id="ui-crystals">0</span></p>
+            </div>
+            <button onclick="startIdleStage()" style="margin-top:20px; padding: 10px; background: #4facfe; border:none; border-radius: 5px; color:white;">Lancer le combat auto</button>
+        </div>
+
+        <!-- Panneau Équipe -->
+        <div id="panel-team" class="panel">
+            <h2>Mon Équipe</h2>
+            <div class="roster-grid" id="ui-roster">
+                <!-- Généré en JS -->
+            </div>
+        </div>
+
+        <!-- Panneau Gacha / Invocation -->
+        <div id="panel-gacha" class="panel">
+            <h2>Portail d'Invocation</h2>
+            <p style="color: #aaa;">Coût : 1 Cristal</p>
+            <button class="btn-pull" onclick="pullGacha()">Invoquer (x1)</button>
+            <div id="gacha-result" style="margin-top: 20px; text-align: center; font-size: 18px; font-weight: bold;"></div>
+        </div>
+
+    </div>
+
+    <!-- 3. BARRE DE NAVIGATION -->
+    <div id="bottom-nav">
+        <button class="nav-btn active" onclick="switchTab('home', this)">
+            <span class="icon">🏠</span><span>AFK</span>
+        </button>
+        <button class="nav-btn" onclick="switchTab('team', this)">
+            <span class="icon">🛡️</span><span>Équipe</span>
+        </button>
+        <button class="nav-btn" onclick="switchTab('gacha', this)">
+            <span class="icon">✨</span><span>Gacha</span>
+        </button>
+    </div>
+
+    <!-- 4. LOGIQUE CLIENT (JAVASCRIPT) -->
+    <script>
+        // Initialisation de Socket.io
+        const socket = io();
+
+        // Système d'identification basique pour les tests (à remplacer par un vrai login plus tard)
+        let myAccountId = localStorage.getItem('accountId');
+        if (!myAccountId) {
+            myAccountId = 'user_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('accountId', myAccountId);
+        }
+
+        // --- GESTION DE L'INTERFACE (ONGLETS) ---
+        function switchTab(tabName, btnElement) {
+            document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById('panel-' + tabName).classList.add('active');
+            btnElement.classList.add('active');
+        }
+
+        // --- COMMUNICATION AVEC LE SERVEUR ---
+        
+        // 1. Connexion et récupération des données
+        socket.on('connect', () => {
+            socket.emit('login', myAccountId);
+        });
+
+        socket.on('playerData', (data) => {
+            updateCurrencies(data.currencies);
+            document.getElementById('ui-stage').innerText = `${data.maxStage.world}-${data.maxStage.level}`;
+            renderRoster(data.roster);
+        });
+
+        // 2. Réception du butin AFK à la connexion
+        socket.on('afkLootReceived', (result) => {
+            alert(`Bon retour ! Vous étiez absent ${result.timeProcessed} minutes.\nGains : ${result.loot.gold} Or, ${result.loot.crystals} Cristaux.`);
+        });
+
+        // 3. Gacha
+        function pullGacha() {
+            document.getElementById('gacha-result').innerText = "Invocation en cours...";
+            socket.emit('pullGacha', myAccountId);
+        }
+
+        socket.on('gachaResult', (data) => {
+            updateCurrencies(data.updatedCurrencies);
+            const resDiv = document.getElementById('gacha-result');
+            resDiv.innerText = data.msg;
+            if(data.pokemon.rarity === 'Légendaire') resDiv.style.color = '#ffd700';
+            else resDiv.style.color = 'white';
+            
+            // On redemande les données complètes pour mettre à jour l'équipe
+            socket.emit('login', myAccountId); 
+        });
+
+        socket.on('errorMsg', (msg) => {
+            alert(msg);
+            document.getElementById('gacha-result').innerText = "";
+        });
+
+        // 4. Moteur de Combat
+        function startIdleStage() {
+            // Pour l'instant, on envoie les 3 premiers Pokémon du roster
+            // Dans la version finale, le joueur choisira sa composition
+            socket.emit('login', myAccountId); // Refresh data
+        }
+
+        // On écoute la mise à jour des données pour lancer le combat avec l'équipe actuelle
+        let isFighting = false;
+        socket.on('playerData', (data) => {
+            if(!isFighting && data.roster.length > 0) {
+                const teamUids = data.roster.slice(0, 3).map(p => p.uid);
+                socket.emit('startIdleStage', { accountId: myAccountId, teamUids: teamUids });
+                isFighting = true;
+            }
+        });
+
+        socket.on('battleUpdate', (result) => {
+            const logsDiv = document.getElementById('battle-logs');
+            if (result.log.length > 0) {
+                // Affiche la dernière action du combat
+                logsDiv.innerText = result.log[result.log.length - 1];
+            }
+        });
+
+        socket.on('stageCleared', (data) => {
+            document.getElementById('ui-stage').innerText = `${data.newStage.world}-${data.newStage.level}`;
+            isFighting = false; // Permet de relancer la boucle
+            socket.emit('login', myAccountId);
+        });
+
+        socket.on('stageFailed', (data) => {
+            document.getElementById('battle-logs').innerText = data.msg + " L'équipe se repose...";
+            isFighting = false;
+        });
+
+        // --- FONCTIONS D'AFFICHAGE ---
+        function updateCurrencies(currencies) {
+            document.getElementById('ui-gold').innerText = currencies.gold;
+            document.getElementById('ui-xp').innerText = currencies.xpBerries;
+            document.getElementById('ui-crystals').innerText = currencies.crystals;
+        }
+
+        function renderRoster(roster) {
+            const rosterDiv = document.getElementById('ui-roster');
+            rosterDiv.innerHTML = ''; // On vide avant de recréer
+
+            roster.forEach(poke => {
+                const card = document.createElement('div');
+                card.className = 'poke-card';
+                // Si on a l'information de rareté depuis le client, on peut ajouter la classe css
+                card.innerHTML = `
+                    <div style="font-size: 24px;">🐾</div>
+                    <div style="font-size: 12px; font-weight: bold; margin-top: 5px;">ID: ${poke.pokemonId}</div>
+                    <div style="font-size: 10px; color: #aaa;">Niv. ${poke.level}</div>
+                `;
+                rosterDiv.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>

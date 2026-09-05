@@ -1,56 +1,64 @@
 const axios = require('axios');
 const fs = require('fs');
 
-const colorTranslations = { black: 'Noir', blue: 'Bleu', brown: 'Brun / Marron', gray: 'Gris', green: 'Vert', pink: 'Rose', purple: 'Violet', red: 'Rouge', white: 'Blanc', yellow: 'Jaune' };
-const typeTranslations = { normal: 'Normal', fighting: 'Combat', flying: 'Vol', poison: 'Poison', ground: 'Sol', rock: 'Roche', bug: 'Insecte', ghost: 'Spectre', steel: 'Acier', fire: 'Feu', water: 'Eau', grass: 'Plante', electric: 'Électrik', psychic: 'Psy', ice: 'Glace', dragon: 'Dragon', dark: 'Ténèbres', fairy: 'Fée' };
+async function buildPokedex() {
+    const pokedex = [];
+    const MAX_POKEMON = 1025; // On peut monter à 1025 plus tard
 
-const MAX_POKEMON = 1025; // Mets 1025 si tu veux toutes les générations !
+    console.log("Début de la génération de la base de données...");
 
-async function generatePokedex() {
-  const pokedex = [];
-  console.log(`Début du téléchargement de ${MAX_POKEMON} Pokémon...`);
+    for (let i = 1; i <= MAX_POKEMON; i++) {
+        try {
+            const res = await axios.get(`https://pokeapi.co/api/v2/pokemon/${i}`);
+            const data = res.data;
 
-  for (let id = 1; id <= MAX_POKEMON; id++) {
-    try {
-      const [pokeRes, speciesRes] = await Promise.all([
-        axios.get(`https://pokeapi.co/api/v2/pokemon/${id}`),
-        axios.get(`https://pokeapi.co/api/v2/pokemon-species/${id}`)
-      ]);
+            // Extraction des statistiques
+            const stats = {
+                hp: data.stats.find(s => s.stat.name === 'hp').base_stat,
+                atk: data.stats.find(s => s.stat.name === 'attack').base_stat,
+                def: data.stats.find(s => s.stat.name === 'defense').base_stat,
+                spa: data.stats.find(s => s.stat.name === 'special-attack').base_stat,
+                spd: data.stats.find(s => s.stat.name === 'special-defense').base_stat,
+                spe: data.stats.find(s => s.stat.name === 'speed').base_stat,
+            };
 
-      const nameFr = speciesRes.data.names.find(n => n.language.name === 'fr')?.name || pokeRes.data.name;
-      const colorRaw = speciesRes.data.color.name;
-      const colorFr = colorTranslations[colorRaw] || colorRaw;
-      
-      const typesRaw = pokeRes.data.types.map(t => t.type.name);
-      const typesFr = typesRaw.map(t => typeTranslations[t] || t);
+            const bst = stats.hp + stats.atk + stats.def + stats.spa + stats.spd + stats.spe;
 
-      const sprite = pokeRes.data.sprites.other['official-artwork'].front_default || pokeRes.data.sprites.front_default;
-      
-      // AJOUT DE LA TAILLE ET DU POIDS (Format brut de l'API)
-      const height = pokeRes.data.height; 
-      const weight = pokeRes.data.weight;
+            // Attribution automatique de la rareté
+            let rarity = "Commun";
+            if (bst >= 400) rarity = "Rare";
+            if (bst >= 500) rarity = "Épique";
+            if (bst >= 600) rarity = "Légendaire";
 
-      pokedex.push({
-        id: id,
-        name: nameFr,
-        color: colorFr,
-        types: typesFr,
-        height: height,
-        weight: weight,
-        sprite: sprite
-      });
+            // Déduction de l'Intelligence Artificielle (Le Rôle)
+            let role = "Soutien"; 
+            if ((stats.hp + stats.def + stats.spd) > (bst * 0.55)) {
+                role = "Tank"; // Grosse majorité de stats défensives
+            } else if (stats.spe > 100 && (stats.atk > 90 || stats.spa > 90)) {
+                role = "Sniper"; // Rapide et tape fort
+            } else if (stats.atk > 100 || stats.spa > 100) {
+                role = "DPS"; // Dégâts lourds, moins rapide
+            }
 
-      console.log(`[${id}/${MAX_POKEMON}] ${nameFr} enregistré !`);
-      
-      await new Promise(resolve => setTimeout(resolve, 50));
+            pokedex.push({
+                id: data.id,
+                name: data.name,
+                types: data.types.map(t => t.type.name),
+                sprite: data.sprites.front_default, // ou le lien vers les sprites Showdown
+                stats: stats,
+                bst: bst,
+                rarity: rarity,
+                role: role
+            });
 
-    } catch (err) {
-      console.error(`❌ Erreur lors du téléchargement du Pokémon ${id}:`, err.message);
+            console.log(`Ajouté : ${data.name} (${role} - ${rarity})`);
+        } catch (error) {
+            console.error(`Erreur sur le Pokémon ${i}`);
+        }
     }
-  }
 
-  fs.writeFileSync('./pokedex.json', JSON.stringify(pokedex, null, 2), 'utf-8');
-  console.log('\n✅ Fichier pokedex.json généré avec succès ! Le fichier est prêt.');
+    fs.writeFileSync('./pokedex.json', JSON.stringify(pokedex, null, 2));
+    console.log("pokedex.json généré avec succès !");
 }
 
-generatePokedex();
+buildPokedex();
